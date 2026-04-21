@@ -1,17 +1,15 @@
-const https = require('https');
+import https from 'https';
 
-exports.handler = async function(event, context) {
+export const handler = async function(event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
 
   try {
-    // Parse JotForm webhook data
     const body = new URLSearchParams(event.body);
     const rawRequest = body.get('rawRequest');
     const data = JSON.parse(rawRequest);
 
-    // Map JotForm fields to our vendor schema
     const vendor = {
       businessName: { stringValue: data['q7_name7'] || data['q3_name'] || '' },
       contactName: { stringValue: data['q4_name4'] || data['q3_name'] || '' },
