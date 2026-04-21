@@ -78,10 +78,18 @@ function VendorQueue({ onSignOut }) {
         <div key={vendor.id} style={styles.card}>
           <div style={styles.cardHeader}>
             <div>
-              <h2 style={styles.businessName}>{vendor.businessName}</h2>
+              <h2 style={styles.businessName}>
+                {vendor.businessName || vendor.contactName}
+              </h2>
+              {vendor.businessName && vendor.businessName !== vendor.contactName && (
+                <p style={styles.contactPerson}>Contact: {vendor.contactName}</p>
+              )}
               <p style={styles.meta}>
-                {vendor.contactName} · {vendor.email} · {vendor.phone}
+                {vendor.email} · {vendor.phone}
               </p>
+              {vendor.address && (
+                <p style={styles.meta}>{vendor.address}</p>
+              )}
             </div>
             <span style={{
               ...styles.badge,
@@ -93,15 +101,47 @@ function VendorQueue({ onSignOut }) {
           </div>
 
           <div style={styles.details}>
-            <span style={styles.pill}>{vendor.category}</span>
-            <span style={styles.pill}>{vendor.boothType}</span>
-            <span style={styles.pill}>{vendor.days}</span>
+            <span style={styles.pill}>{vendor.category || 'No category'}</span>
+            <span style={styles.pill}>{vendor.boothType || 'No booth selected'}</span>
+            <span style={styles.pill}>{vendor.days || 'Both days'}</span>
+            {vendor.source === 'jotform' && (
+              <span style={{...styles.pill, background: '#e8f4fd', color: '#1a6ea8'}}>
+                JotForm
+              </span>
+            )}
+            {vendor.insuranceAcknowledged && (
+              <span style={{...styles.pill, background: '#e8f5e9', color: '#2d5a27'}}>
+                ✓ Insurance acknowledged
+              </span>
+            )}
           </div>
 
           <p style={styles.description}>{vendor.description}</p>
 
-          {vendor.notes && (
-            <p style={styles.notes}><strong>Notes:</strong> {vendor.notes}</p>
+          {vendor.demonstration && (
+            <p style={styles.fieldRow}>
+              <strong>Demonstration:</strong> {vendor.demonstration}
+            </p>
+          )}
+
+          {vendor.website && (
+            <p style={styles.fieldRow}>
+              <strong>Website:</strong>{' '}
+              
+                href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.link}
+              >
+                {vendor.website}
+              </a>
+            </p>
+          )}
+
+          {vendor.additionalNotes && (
+            <p style={styles.fieldRow}>
+              <strong>Additional notes:</strong> {vendor.additionalNotes}
+            </p>
           )}
 
           <div style={styles.actions}>
@@ -202,6 +242,11 @@ const styles = {
     color: "#2d5a27",
     marginBottom: "0.2rem"
   },
+  contactPerson: {
+    fontSize: "13px",
+    color: "#666",
+    marginBottom: "0.2rem"
+  },
   meta: {
     fontSize: "13px",
     color: "#888"
@@ -231,10 +276,15 @@ const styles = {
     lineHeight: "1.6",
     marginBottom: "0.5rem"
   },
-  notes: {
-    fontSize: "13px",
-    color: "#888",
-    marginBottom: "0.75rem"
+  fieldRow: {
+    fontSize: "14px",
+    color: "#555",
+    lineHeight: "1.6",
+    marginBottom: "0.4rem"
+  },
+  link: {
+    color: "#2d5a27",
+    textDecoration: "none"
   },
   actions: {
     display: "flex",
