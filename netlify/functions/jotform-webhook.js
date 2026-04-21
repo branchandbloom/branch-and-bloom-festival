@@ -6,62 +6,19 @@ export const handler = async function(event, context) {
   }
 
   try {
+    // Log everything so we can see what JotForm sends
+    console.log('Headers:', JSON.stringify(event.headers));
+    console.log('Body:', event.body);
+
     const body = new URLSearchParams(event.body);
+    console.log('Parsed keys:', [...body.keys()]);
+    
     const rawRequest = body.get('rawRequest');
-    const data = JSON.parse(rawRequest);
-
-    const vendor = {
-      businessName: { stringValue: data['q7_name7'] || data['q3_name'] || '' },
-      contactName: { stringValue: data['q4_name4'] || data['q3_name'] || '' },
-      email: { stringValue: data['q5_email'] || '' },
-      phone: { stringValue: data['q6_phone'] || '' },
-      description: { stringValue: data['q8_pleaseDescribe'] || '' },
-      demonstration: { stringValue: data['q9_wouldYou'] || '' },
-      website: { stringValue: data['q10_webAddress'] || '' },
-      boothType: { stringValue: data['q11_whatBooth'] || '' },
-      additionalNotes: { stringValue: data['q12_additional'] || '' },
-      days: { stringValue: 'Both days' },
-      category: { stringValue: '' },
-      status: { stringValue: 'pending' },
-      portalAccess: { booleanValue: false },
-      source: { stringValue: 'jotform' },
-      createdAt: { timestampValue: new Date().toISOString() }
-    };
-
-    const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
-    const apiKey = process.env.VITE_FIREBASE_API_KEY;
-
-    const postData = JSON.stringify({ fields: vendor });
-
-    const result = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'firestore.googleapis.com',
-        path: `/v1/projects/${projectId}/databases/(default)/documents/vendors?key=${apiKey}`,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        }
-      };
-
-      const req = https.request(options, res => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => resolve({ status: res.statusCode, body: data }));
-      });
-
-      req.on('error', reject);
-      req.write(postData);
-      req.end();
-    });
-
-    if (result.status !== 200) {
-      throw new Error(`Firestore error: ${result.body}`);
-    }
+    console.log('rawRequest:', rawRequest);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true })
+      body: JSON.stringify({ received: true })
     };
 
   } catch (error) {
