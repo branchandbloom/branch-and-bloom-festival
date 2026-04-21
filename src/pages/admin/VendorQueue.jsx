@@ -124,19 +124,12 @@ function VendorQueue({ onSignOut }) {
             </p>
           )}
 
-          {vendor.website && (
-            <p style={styles.fieldRow}>
-              <strong>Website:</strong>{' '}
-              
-                href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.link}
-              >
-                {vendor.website}
-              </a>
-            </p>
-          )}
+{vendor.website && (
+  <p style={styles.fieldRow}>
+    <strong>Website:</strong>{' '}
+    <a href={`https://${vendor.website.replace('https://','').replace('http://','')}`} target="_blank" rel="noopener noreferrer" style={styles.link}>{vendor.website}</a>
+  </p>
+)}
 
           {vendor.additionalNotes && (
             <p style={styles.fieldRow}>
