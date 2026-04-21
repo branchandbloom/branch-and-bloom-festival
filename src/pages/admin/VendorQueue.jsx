@@ -205,13 +205,7 @@ function VendorQueue({ onSignOut }) {
                 Payment link — Base: ${vendor.basePrice} + ${vendor.fee} fee = <strong>${vendor.total}</strong>
               </p>
               
-                href={vendor.paymentLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={styles.paymentLinkUrl}
-              >
-                {vendor.paymentLink}
-              </a>
+                <a href={vendor.paymentLink} target="_blank" rel="noopener noreferrer" style={styles.paymentLinkUrl}>{vendor.paymentLink}</a>
             </div>
           )}
 
