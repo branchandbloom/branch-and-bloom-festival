@@ -1,31 +1,14 @@
-import { useEffect, useState } from "react";
-import { db } from "./firebase";
-import { collection, addDoc, getDocs } from "firebase/firestore";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import VendorRegistration from "./pages/vendor/VendorRegistration";
 
 function App() {
-  const [status, setStatus] = useState("Testing connection...");
-
-  useEffect(() => {
-    async function testConnection() {
-      try {
-        await addDoc(collection(db, "connectionTest"), {
-          message: "Firebase connected!",
-          timestamp: new Date()
-        });
-        const snapshot = await getDocs(collection(db, "connectionTest"));
-        setStatus(`✅ Firebase connected! ${snapshot.size} document(s) in test collection.`);
-      } catch (error) {
-        setStatus(`❌ Connection failed: ${error.message}`);
-      }
-    }
-    testConnection();
-  }, []);
-
   return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
-      <h1>Branch & Bloom Festival 2026</h1>
-      <p>{status}</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/vendor/register" element={<VendorRegistration />} />
+        <Route path="/" element={<h1 style={{ padding: "2rem" }}>Branch & Bloom Festival 2026</h1>} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
