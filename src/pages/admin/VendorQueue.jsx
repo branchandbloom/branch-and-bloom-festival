@@ -34,6 +34,39 @@ function VendorQueue({ onSignOut }) {
     await updateDoc(doc(db, "vendors", vendorId), { status: newStatus });
   }
 
+  async function generatePaymentLink(vendor) {
+    try {
+      const response = await fetch('/.netlify/functions/create-payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendorId: vendor.id,
+          boothType: vendor.boothType,
+          days: vendor.days,
+          businessName: vendor.businessName || vendor.contactName,
+          email: vendor.email
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await updateDoc(doc(db, "vendors", vendor.id), {
+          paymentLink: data.paymentLink,
+          basePrice: data.basePrice,
+          fee: data.fee,
+          total: data.total,
+          paymentLinkCreatedAt: new Date()
+        });
+        alert(`Payment link created!\n\nBase: $${data.basePrice}\nProcessing fee: $${data.fee}\nTotal: $${data.total}\n\nLink: ${data.paymentLink}`);
+      } else {
+        alert('Error creating payment link: ' + data.error);
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+  }
+
   const filtered = filter === "all"
     ? vendors
     : vendors.filter(v => v.status === filter);
@@ -124,16 +157,22 @@ function VendorQueue({ onSignOut }) {
             </p>
           )}
 
-{vendor.website && (
-  <p style={styles.fieldRow}>
-    <strong>Website:</strong>{' '}
-    <a href={`https://${vendor.website.replace('https://','').replace('http://','')}`} target="_blank" rel="noopener noreferrer" style={styles.link}>{vendor.website}</a>
-  </p>
-)}
+          {vendor.website && (
+            <p style={styles.fieldRow}>
+              <strong>Website:</strong>{' '}
+              <a href={`https://${vendor.website.replace('https://','').replace('http://','')}`} target="_blank" rel="noopener noreferrer" style={styles.link}>{vendor.website}</a>
+            </p>
+          )}
 
           {vendor.additionalNotes && (
             <p style={styles.fieldRow}>
               <strong>Additional notes:</strong> {vendor.additionalNotes}
+            </p>
+          )}
+
+          {vendor.address && (
+            <p style={styles.fieldRow}>
+              <strong>Address:</strong> {vendor.address}
             </p>
           )}
 
@@ -150,7 +189,32 @@ function VendorQueue({ onSignOut }) {
             >
               ⏸ Hold
             </button>
+            {vendor.status === "approved" && (
+              <button
+                onClick={() => generatePaymentLink(vendor)}
+                style={styles.actionPayment}
+              >
+                $ Generate payment link
+              </button>
+            )}
           </div>
+
+          {vendor.paymentLink && (
+            <div style={styles.paymentLinkBox}>
+              <p style={styles.paymentLinkLabel}>
+                Payment link — Base: ${vendor.basePrice} + ${vendor.fee} fee = <strong>${vendor.total}</strong>
+              </p>
+              
+                href={vendor.paymentLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.paymentLinkUrl}
+              >
+                {vendor.paymentLink}
+              </a>
+            </div>
+          )}
+
         </div>
       ))}
     </div>
@@ -282,7 +346,8 @@ const styles = {
   actions: {
     display: "flex",
     gap: "0.5rem",
-    marginTop: "1rem"
+    marginTop: "1rem",
+    flexWrap: "wrap"
   },
   action: {
     padding: "0.4rem 1rem",
@@ -319,6 +384,32 @@ const styles = {
     color: "#fff",
     fontSize: "13px",
     cursor: "pointer"
+  },
+  actionPayment: {
+    padding: "0.4rem 1rem",
+    borderRadius: "6px",
+    border: "1px solid #1565c0",
+    background: "#fff",
+    color: "#1565c0",
+    fontSize: "13px",
+    cursor: "pointer"
+  },
+  paymentLinkBox: {
+    marginTop: "1rem",
+    padding: "0.75rem",
+    background: "#e3f2fd",
+    borderRadius: "6px",
+    border: "1px solid #90caf9"
+  },
+  paymentLinkLabel: {
+    fontSize: "13px",
+    color: "#1565c0",
+    marginBottom: "0.4rem"
+  },
+  paymentLinkUrl: {
+    fontSize: "12px",
+    color: "#1565c0",
+    wordBreak: "break-all"
   }
 };
 
