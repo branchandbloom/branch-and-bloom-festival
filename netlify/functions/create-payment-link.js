@@ -2,13 +2,14 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Pricing matrix
 const BOOTH_PRICES = {
   "10' x 10'": { tier1: 150, tier2: 175, tier3: 200 },
   "10' x 20'": { tier1: 200, tier2: 225, tier3: 250 },
   "Food Truck": { tier1: 200, tier2: 225, tier3: 250 },
   "Food truck (10' x 20')": { tier1: 200, tier2: 225, tier3: 250 },
-  "Non-Profit / Community Table": { tier1: 30, tier2: 40, tier3: 50 }
+  "Non-Profit / Community Table": { tier1: 30, tier2: 40, tier3: 50 },
+  "Non-Profit": { tier1: 30, tier2: 40, tier3: 50 },
+  "Community Table": { tier1: 30, tier2: 40, tier3: 50 }
 };
 
 const CC_FEE = 0.032;
@@ -18,7 +19,19 @@ function getPrice(boothType, days) {
   const tier1Deadline = new Date('2026-05-15');
   const tier2Deadline = new Date('2026-06-15');
 
-  const prices = BOOTH_PRICES[boothType] || { tier1: 150, tier2: 175, tier3: 200 };
+  // Try exact match first, then partial match
+  let prices = BOOTH_PRICES[boothType];
+
+  if (!prices) {
+    const boothLower = boothType?.toLowerCase() || '';
+    if (boothLower.includes('non-profit') || boothLower.includes('community')) {
+      prices = { tier1: 30, tier2: 40, tier3: 50 };
+    } else if (boothLower.includes('food truck') || boothLower.includes('20')) {
+      prices = { tier1: 200, tier2: 225, tier3: 250 };
+    } else {
+      prices = { tier1: 150, tier2: 175, tier3: 200 };
+    }
+  }
 
   let basePrice;
   if (today <= tier1Deadline) {
@@ -49,9 +62,12 @@ export const handler = async function(event, context) {
   try {
     const { vendorId, boothType, days, businessName, email } = JSON.parse(event.body);
 
+    console.log('Generating payment link for:', businessName, boothType, days);
+
     const { basePrice, fee, total } = getPrice(boothType, days);
 
-    // Create Stripe payment link
+    console.log('Price calculated:', { basePrice, fee, total });
+
     const paymentLink = await stripe.paymentLinks.create({
       line_items: [
         {
