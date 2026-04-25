@@ -406,7 +406,6 @@ async function generateVendorPasses(vendor) {
     🎟 Generate vendor passes
   </button>
 )}
-              )}
             </div>
 
             {vendor.paymentLink && (
