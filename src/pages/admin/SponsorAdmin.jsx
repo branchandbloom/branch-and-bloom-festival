@@ -1,3 +1,4 @@
+import AdminNav from "./AdminNav";
 import { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import {
@@ -241,20 +242,19 @@ function SponsorAdmin({ onSignOut }) {
     inbloom: sponsors.filter(s => s.tier === 'inbloom').length,
     rootbranch: sponsors.filter(s => s.tier === 'rootbranch').length
   };
-
-  return (
+return (
+  <div>
+    <AdminNav onSignOut={onSignOut} />
     <div style={styles.container}>
+
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Sponsors</h1>
           <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
-            {showForm ? 'Cancel' : '+ Add sponsor'}
-          </button>
-          <button onClick={onSignOut} style={styles.signOut}>Sign out</button>
-        </div>
+        <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
+          {showForm ? 'Cancel' : '+ Add sponsor'}
+        </button>
       </div>
 
       {/* Add sponsor form */}
@@ -437,6 +437,7 @@ function SponsorAdmin({ onSignOut }) {
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
