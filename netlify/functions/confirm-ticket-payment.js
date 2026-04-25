@@ -70,7 +70,7 @@ export const handler = async function(event, context) {
     const { ticketType, ticketLabel, groupSize, name, email, donation } = session.metadata;
     const qrToken = generateQRToken();
 
-    const qrDataURL = await QRCode.toDataURL(qrToken, {
+   const qrDataURL = await QRCode.toDataURL(`https://branch-and-bloom-festival.netlify.app/checkin?token=${qrToken}`, {
       width: 300,
       margin: 2,
       color: { dark: '#2d5a27', light: '#ffffff' }
