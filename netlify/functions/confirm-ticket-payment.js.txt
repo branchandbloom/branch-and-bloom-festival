@@ -1,5 +1,6 @@
-Import Stripe from 'stripe';
-Import https from 'https';
+import Stripe from 'stripe';
+import https from 'https';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function generateQRToken() {
@@ -28,8 +29,8 @@ async function saveAttendeeToFirestore(attendeeData) {
 
   return new Promise((resolve, reject) => {
     const options = {
-        hostname: 'firestore.googleapis.com',
-        path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
+Hostname: 'firestore.googleapis.com',
+path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
