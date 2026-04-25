@@ -42,27 +42,35 @@ function ScanMode() {
   }, []);
 
   async function startScanner() {
-    setScanStatus('scanning');
+  setScanStatus('scanning');
+  
+  // Wait for DOM to render the qr-reader div
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  try {
     const html5Qr = new Html5Qrcode("qr-reader");
     html5QrRef.current = html5Qr;
 
-    try {
-      await html5Qr.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        async (decodedText) => {
-          await html5Qr.stop();
-          const token = new URL(decodedText).searchParams.get('token');
+    await html5Qr.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
+      async (decodedText) => {
+        await html5Qr.stop();
+        try {
+          const url = new URL(decodedText);
+          const token = url.searchParams.get('token');
           if (token) await lookupToken(token);
-        },
-        () => {}
-      );
-    } catch (err) {
-      console.error('Scanner error:', err);
-      setScanStatus('error');
-    }
+        } catch {
+          await lookupToken(decodedText);
+        }
+      },
+      () => {}
+    );
+  } catch (err) {
+    console.error('Scanner error:', err);
+    setScanStatus('error');
   }
-
+}
   async function lookupToken(token) {
     setScanStatus('loading');
     try {
@@ -580,10 +588,11 @@ const styles = {
     fontFamily: "Georgia, serif",
     marginBottom: "0.75rem"
   },
-  qrReader: {
-    width: "100%",
-    marginBottom: "1rem"
-  },
+qrReader: {
+  width: "100%",
+  minHeight: "300px",
+  marginBottom: "1rem"
+},
   divider: {
     display: "flex",
     alignItems: "center",
