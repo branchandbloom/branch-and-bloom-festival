@@ -12,25 +12,18 @@ async function saveAttendeeToFirestore(attendeeData) {
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
   const apiKey = process.env.VITE_FIREBASE_API_KEY;
 
-  const fields = {};
-  for (const [key, value] of Object.entries(attendeeData)) {
-    if (typeof value === 'string') fields[key] = { stringValue: value };
-    if (typeof value === 'number') fields[key] = { integerValue: value };
-    if (typeof value === 'boolean') fields[key] = { booleanValue: value };
+ const fields = {};
+for (const [key, value] of Object.entries(attendeeData)) {
+  if (typeof value === 'string') fields[key] = { stringValue: value };
+  if (typeof value === 'boolean') fields[key] = { booleanValue: value };
+  if (typeof value === 'number') {
+    if (Number.isInteger(value)) {
+      fields[key] = { integerValue: value };
+    } else {
+      fields[key] = { doubleValue: value };
+    }
   }
-
-  const postData = JSON.stringify({ fields });
-
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'firestore.googleapis.com',
-      path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    };
+}
 
     const req = https.request(options, res => {
       let data = '';
