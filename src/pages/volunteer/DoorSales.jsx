@@ -7,27 +7,20 @@ const TICKETS = [
   { id: "group", label: "Group / Family Pass (up to 5)", price: 25 }
 ];
 
-const CC_FEE = 0.032;
-
 function DoorSales() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [groupSize, setGroupSize] = useState(2);
-  const [paymentMethod, setPaymentMethod] = useState('cash');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [donation, setDonation] = useState(0);
   const [status, setStatus] = useState('select');
   const [lastAttendee, setLastAttendee] = useState(null);
 
-  const fee = paymentMethod === 'card'
-    ? Math.round((selectedTicket?.price || 0) * CC_FEE * 100) / 100
-    : 0;
-  const total = (selectedTicket?.price || 0) + donation + fee;
+  const total = (selectedTicket?.price || 0) + donation;
 
   function reset() {
     setSelectedTicket(null);
     setGroupSize(2);
-    setPaymentMethod('cash');
     setName('');
     setEmail('');
     setDonation(0);
@@ -56,7 +49,7 @@ function DoorSales() {
         groupSize: selectedTicket.id === 'group' ? groupSize : 1,
         donation,
         total,
-        paymentMethod,
+        paymentMethod: 'cash',
         qrToken,
         checkedInDay1: checkinField === 'checkedInDay1',
         checkedInDay2: checkinField === 'checkedInDay2',
@@ -86,9 +79,7 @@ function DoorSales() {
             {lastAttendee.groupSize > 1 && (
               <p style={styles.detail}>Group of {lastAttendee.groupSize}</p>
             )}
-            <p style={styles.detail}>
-              Payment: {lastAttendee.paymentMethod === 'cash' ? '💵 Cash' : '💳 Card'} · ${lastAttendee.total.toFixed(2)}
-            </p>
+            <p style={styles.detail}>💵 Cash · ${lastAttendee.total.toFixed(2)}</p>
             {lastAttendee.donation > 0 && (
               <p style={styles.detail}>Kingswood donation: ${lastAttendee.donation}</p>
             )}
@@ -106,23 +97,25 @@ function DoorSales() {
       <div style={styles.card}>
         <h1 style={styles.title}>Door Sales</h1>
         <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
-<div style={styles.qrSection}>
-  <p style={styles.qrTitle}>💳 Pay by card</p>
-  <p style={styles.qrSubtext}>
-    Attendee scans this QR with their phone to purchase online
-  </p>
-  <img
-    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://branch-and-bloom-festival.netlify.app/tickets')}&color=2d5a27`}
-    alt="Ticket purchase QR code"
-    style={styles.qrImage}
-  />
-</div>
 
-<div style={styles.divider}>
-  <div style={styles.dividerLine}></div>
-  <span>or cash below</span>
-  <div style={styles.dividerLine}></div>
-</div>
+        <div style={styles.qrSection}>
+          <p style={styles.qrTitle}>💳 Pay by card</p>
+          <p style={styles.qrSubtext}>
+            Attendee scans this QR with their phone to purchase online
+          </p>
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://branch-and-bloom-festival.netlify.app/tickets')}&color=2d5a27`}
+            alt="Ticket purchase QR code"
+            style={styles.qrImage}
+          />
+        </div>
+
+        <div style={styles.divider}>
+          <div style={styles.dividerLine}></div>
+          <span>or cash below</span>
+          <div style={styles.dividerLine}></div>
+        </div>
+
         <h3 style={styles.sectionTitle}>Select ticket</h3>
         {TICKETS.map(ticket => (
           <div
@@ -152,19 +145,6 @@ function DoorSales() {
             </select>
           </div>
         )}
-          <button
-            onClick={() => setPaymentMethod('cash')}
-            style={paymentMethod === 'cash' ? styles.paymentActive : styles.paymentBtn}
-          >
-            💵 Cash
-          </button>
-          <button
-            onClick={() => setPaymentMethod('card')}
-            style={paymentMethod === 'card' ? styles.paymentActive : styles.paymentBtn}
-          >
-            💳 Card
-          </button>
-        </div>
 
         <h3 style={styles.sectionTitle}>Kingswood donation</h3>
         <div style={styles.donationRow}>
@@ -214,12 +194,6 @@ function DoorSales() {
                 <span>${donation}</span>
               </div>
             )}
-            {paymentMethod === 'card' && fee > 0 && (
-              <div style={styles.summaryRow}>
-                <span>Processing fee (3.2%)</span>
-                <span>${fee}</span>
-              </div>
-            )}
             <div style={{ ...styles.summaryRow, ...styles.summaryTotal }}>
               <span>Total</span>
               <span>${total.toFixed(2)}</span>
@@ -232,7 +206,7 @@ function DoorSales() {
           style={selectedTicket && name ? styles.button : styles.buttonDisabled}
           disabled={!selectedTicket || !name}
         >
-          Sell & check in
+          💵 Sell & check in
         </button>
       </div>
     </div>
@@ -266,6 +240,42 @@ const styles = {
     textAlign: "center",
     marginBottom: "1.5rem"
   },
+  qrSection: {
+    textAlign: "center",
+    padding: "1rem",
+    background: "#f0f7ee",
+    borderRadius: "12px",
+    marginBottom: "1rem",
+    border: "2px solid #2d5a27"
+  },
+  qrTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#2d5a27",
+    marginBottom: "0.5rem"
+  },
+  qrSubtext: {
+    fontSize: "13px",
+    color: "#555",
+    marginBottom: "1rem"
+  },
+  qrImage: {
+    width: "180px",
+    height: "180px"
+  },
+  divider: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    margin: "1rem 0",
+    color: "#aaa",
+    fontSize: "13px"
+  },
+  dividerLine: {
+    flex: 1,
+    height: "1px",
+    background: "#eee"
+  },
   sectionTitle: {
     fontSize: "14px",
     fontWeight: "600",
@@ -295,31 +305,6 @@ const styles = {
     fontSize: "16px",
     fontWeight: "600",
     color: "#2d5a27"
-  },
-  paymentRow: {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "0.5rem"
-  },
-  paymentBtn: {
-    flex: 1,
-    padding: "0.65rem",
-    borderRadius: "8px",
-    border: "1px solid #ddd",
-    background: "#fff",
-    fontSize: "15px",
-    cursor: "pointer"
-  },
-  paymentActive: {
-    flex: 1,
-    padding: "0.65rem",
-    borderRadius: "8px",
-    border: "2px solid #2d5a27",
-    background: "#f0f7ee",
-    fontSize: "15px",
-    cursor: "pointer",
-    color: "#2d5a27",
-    fontWeight: "600"
   },
   donationRow: {
     display: "flex",
@@ -436,88 +421,6 @@ const styles = {
     fontSize: "14px",
     color: "#555",
     marginBottom: "0.3rem"
-  }
-  detail: {
-    fontSize: "14px",
-    color: "#555",
-    marginBottom: "0.3rem"
-  },
-  qrSection: {
-    textAlign: "center",
-    padding: "1rem",
-    background: "#f0f7ee",
-    borderRadius: "12px",
-    marginBottom: "1.5rem",
-    border: "2px solid #2d5a27"
-  },
-  qrTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#2d5a27",
-    marginBottom: "0.5rem"
-  },
-  qrSubtext: {
-    fontSize: "13px",
-    color: "#555",
-    marginBottom: "1rem"
-  },
-  qrImage: {
-    width: "180px",
-    height: "180px"
-  },
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    margin: "1.5rem 0",
-    color: "#aaa",
-    fontSize: "13px"
-  },
-  dividerLine: {
-    flex: 1,
-    height: "1px",
-    background: "#eee"
-  },
-  detail: {
-    fontSize: "14px",
-    color: "#555",
-    marginBottom: "0.3rem"
-  },
-  qrSection: {
-    textAlign: "center",
-    padding: "1rem",
-    background: "#f0f7ee",
-    borderRadius: "12px",
-    marginBottom: "1.5rem",
-    border: "2px solid #2d5a27"
-  },
-  qrTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#2d5a27",
-    marginBottom: "0.5rem"
-  },
-  qrSubtext: {
-    fontSize: "13px",
-    color: "#555",
-    marginBottom: "1rem"
-  },
-  qrImage: {
-    width: "180px",
-    height: "180px"
-  },
-  divider: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    margin: "1.5rem 0",
-    color: "#aaa",
-    fontSize: "13px"
-  },
-  dividerLine: {
-    flex: 1,
-    height: "1px",
-    background: "#eee"
   }
 };
 
