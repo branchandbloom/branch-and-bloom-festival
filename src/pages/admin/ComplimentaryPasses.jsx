@@ -89,7 +89,7 @@ function ComplimentaryPasses({ onSignOut }) {
           status: 'confirmed',
           source: passSource,
           notes: notes || '',
-          claimUrl: `https://branch-and-bloom-festival.netlify.app/checkin?token=${qrToken}`,
+          claimUrl: `https://branch-and-bloom-festival.netlify.app/pass?token=${qrToken}`,
           createdAt: serverTimestamp()
         });
       }

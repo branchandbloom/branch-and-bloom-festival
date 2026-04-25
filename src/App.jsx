@@ -11,6 +11,7 @@ import CheckIn from "./pages/volunteer/CheckIn";
 import DoorSales from "./pages/volunteer/DoorSales";
 import GateApp from "./pages/volunteer/GateApp";
 import ComplimentaryPasses from "./pages/admin/ComplimentaryPasses";
+import ClaimPass from "./pages/attendee/ClaimPass";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -56,6 +57,7 @@ function App() {
         <Route path="/checkin" element={<CheckIn />} />
         <Route path="/door" element={<DoorSales />} />
         <Route path="/gate" element={<GateApp />} />
+        <Route path="/pass" element={<ClaimPass />} />
       </Routes>
     </BrowserRouter>
   );
