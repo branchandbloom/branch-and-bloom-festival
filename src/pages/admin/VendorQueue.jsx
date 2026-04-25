@@ -7,14 +7,6 @@ import {
   orderBy,
   onSnapshot,
   doc,
-  updateDoc
-} from "firebase/firestore";
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  doc,
   updateDoc,
   addDoc
 } from "firebase/firestore";
@@ -26,6 +18,7 @@ const STATUS_COLORS = {
   held: { bg: "#fce4ec", color: "#c62828", label: "On hold" },
   paid: { bg: "#e3f2fd", color: "#1565c0", label: "Paid" }
 };
+
 function ManualVendorForm({ onSave }) {
   const [form, setForm] = useState({
     businessName: '',
@@ -67,7 +60,6 @@ function ManualVendorForm({ onSave }) {
           <input style={formStyles.input} name="contactName" value={form.contactName} onChange={handleChange} />
         </div>
       </div>
-
       <div style={{ display: 'flex', gap: '1rem' }}>
         <div style={{ flex: 1, marginBottom: '1rem' }}>
           <label style={formStyles.label}>Email *</label>
@@ -78,7 +70,6 @@ function ManualVendorForm({ onSave }) {
           <input style={formStyles.input} name="phone" value={form.phone} onChange={handleChange} />
         </div>
       </div>
-
       <div style={{ display: 'flex', gap: '1rem' }}>
         <div style={{ flex: 1, marginBottom: '1rem' }}>
           <label style={formStyles.label}>Category</label>
@@ -95,7 +86,6 @@ function ManualVendorForm({ onSave }) {
           </select>
         </div>
       </div>
-
       <div style={{ marginBottom: '1rem' }}>
         <label style={formStyles.label}>Days</label>
         <select style={formStyles.input} name="days" value={form.days} onChange={handleChange}>
@@ -103,17 +93,14 @@ function ManualVendorForm({ onSave }) {
           {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
       </div>
-
       <div style={{ marginBottom: '1rem' }}>
         <label style={formStyles.label}>Description</label>
         <textarea style={{ ...formStyles.input, height: '80px', resize: 'vertical' }} name="description" value={form.description} onChange={handleChange} />
       </div>
-
       <div style={{ marginBottom: '1rem' }}>
         <label style={formStyles.label}>Internal notes</label>
         <input style={formStyles.input} name="notes" value={form.notes} onChange={handleChange} />
       </div>
-
       <button
         onClick={handleSubmit}
         style={form.businessName && form.email ? formStyles.button : formStyles.buttonDisabled}
@@ -132,27 +119,6 @@ const formStyles = {
     color: '#555',
     marginBottom: '0.4rem'
   },
-  addButton: {
-  padding: "0.4rem 0.9rem",
-  borderRadius: "6px",
-  border: "1px solid #2d5a27",
-  background: "#2d5a27",
-  color: "#fff",
-  fontSize: "13px",
-  cursor: "pointer"
-},
-formCard: {
-  background: "#fff",
-  borderRadius: "12px",
-  padding: "1.5rem",
-  marginBottom: "1.5rem",
-  boxShadow: "0 1px 6px rgba(0,0,0,0.07)"
-},
-formTitle: {
-  fontSize: "16px",
-  color: "#2d5a27",
-  marginBottom: "1.25rem"
-},
   input: {
     width: '100%',
     padding: '0.65rem 0.8rem',
@@ -185,6 +151,7 @@ formTitle: {
     fontFamily: 'Georgia, serif'
   }
 };
+
 function VendorQueue({ onSignOut }) {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -249,160 +216,171 @@ function VendorQueue({ onSignOut }) {
     paid: vendors.filter(v => v.status === "paid").length
   };
 
-return (
-  <div>
-    <AdminNav onSignOut={onSignOut} />
-    <div style={styles.container}>
-      <div style={styles.pageHeader}>
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+  return (
     <div>
-      <h1 style={styles.title}>Vendor applications</h1>
-      <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
-    </div>
-    <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
-      {showForm ? 'Cancel' : '+ Add vendor'}
-    </button>
-  </div>
-</div>
-{showForm && (
-  <div style={styles.formCard}>
-    <h2 style={styles.formTitle}>Add vendor manually</h2>
-    <ManualVendorForm onSave={async (data) => {
-      await addDoc(collection(db, "vendors"), {
-        ...data,
-        status: 'pending',
-        portalAccess: false,
-        source: 'manual',
-        createdAt: serverTimestamp()
-      });
-      setShowForm(false);
-    }} />
-  </div>
-)}
-       </div>
+      <AdminNav onSignOut={onSignOut} />
+      <div style={styles.container}>
 
-      <div style={styles.filters}>
-        {["all", "pending", "approved", "held", "paid"].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={filter === f ? styles.filterActive : styles.filter}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)} ({counts[f]})
-          </button>
+        <div style={styles.pageHeader}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <h1 style={styles.title}>Vendor applications</h1>
+              <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
+            </div>
+            <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
+              {showForm ? 'Cancel' : '+ Add vendor'}
+            </button>
+          </div>
+        </div>
+
+        {showForm && (
+          <div style={styles.formCard}>
+            <h2 style={styles.formTitle}>Add vendor manually</h2>
+            <ManualVendorForm onSave={async (data) => {
+              await addDoc(collection(db, "vendors"), {
+                ...data,
+                status: 'pending',
+                portalAccess: false,
+                source: 'manual',
+                createdAt: serverTimestamp()
+              });
+              setShowForm(false);
+            }} />
+          </div>
+        )}
+
+        <div style={styles.filters}>
+          {["all", "pending", "approved", "held", "paid"].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              style={filter === f ? styles.filterActive : styles.filter}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)} ({counts[f]})
+            </button>
+          ))}
+        </div>
+
+        {loading && <p style={styles.loading}>Loading applications...</p>}
+
+        {!loading && filtered.length === 0 && (
+          <p style={styles.loading}>No applications in this category.</p>
+        )}
+
+        {filtered.map(vendor => (
+          <div key={vendor.id} style={styles.card}>
+            <div style={styles.cardHeader}>
+              <div>
+                <h2 style={styles.businessName}>
+                  {vendor.businessName || vendor.contactName}
+                </h2>
+                {vendor.businessName && vendor.businessName !== vendor.contactName && (
+                  <p style={styles.contactPerson}>Contact: {vendor.contactName}</p>
+                )}
+                <p style={styles.meta}>
+                  {vendor.email} · {vendor.phone}
+                </p>
+                {vendor.address && (
+                  <p style={styles.meta}>{vendor.address}</p>
+                )}
+              </div>
+              <span style={{
+                ...styles.badge,
+                background: STATUS_COLORS[vendor.status]?.bg || "#eee",
+                color: STATUS_COLORS[vendor.status]?.color || "#333"
+              }}>
+                {STATUS_COLORS[vendor.status]?.label || vendor.status}
+              </span>
+            </div>
+
+            <div style={styles.details}>
+              <span style={styles.pill}>{vendor.category || 'No category'}</span>
+              <span style={styles.pill}>{vendor.boothType || 'No booth selected'}</span>
+              <span style={styles.pill}>{vendor.days || 'Both days'}</span>
+              {vendor.source === 'jotform' && (
+                <span style={{...styles.pill, background: '#e8f4fd', color: '#1a6ea8'}}>
+                  JotForm
+                </span>
+              )}
+              {vendor.source === 'manual' && (
+                <span style={{...styles.pill, background: '#f3e5f5', color: '#6a1b9a'}}>
+                  Manual
+                </span>
+              )}
+              {vendor.insuranceAcknowledged && (
+                <span style={{...styles.pill, background: '#e8f5e9', color: '#2d5a27'}}>
+                  ✓ Insurance acknowledged
+                </span>
+              )}
+            </div>
+
+            <p style={styles.description}>{vendor.description}</p>
+
+            {vendor.demonstration && (
+              <p style={styles.fieldRow}>
+                <strong>Demonstration:</strong> {vendor.demonstration}
+              </p>
+            )}
+
+            {vendor.website && (
+              <p style={styles.fieldRow}>
+                <strong>Website:</strong>{' '}
+                <a href={`https://${vendor.website.replace('https://','').replace('http://','')}`} target="_blank" rel="noopener noreferrer" style={styles.link}>{vendor.website}</a>
+              </p>
+            )}
+
+            {vendor.additionalNotes && (
+              <p style={styles.fieldRow}>
+                <strong>Additional notes:</strong> {vendor.additionalNotes}
+              </p>
+            )}
+
+            {vendor.address && (
+              <p style={styles.fieldRow}>
+                <strong>Address:</strong> {vendor.address}
+              </p>
+            )}
+
+            {vendor.notes && (
+              <p style={styles.fieldRow}>
+                <strong>Notes:</strong> {vendor.notes}
+              </p>
+            )}
+
+            <div style={styles.actions}>
+              <button
+                onClick={() => updateStatus(vendor.id, "approved")}
+                style={vendor.status === "approved" ? styles.actionActive : styles.action}
+              >
+                ✓ Approve
+              </button>
+              <button
+                onClick={() => updateStatus(vendor.id, "held")}
+                style={vendor.status === "held" ? styles.actionHeldActive : styles.actionHeld}
+              >
+                ⏸ Hold
+              </button>
+              {vendor.status === "approved" && (
+                <button
+                  onClick={() => generatePaymentLink(vendor)}
+                  style={styles.actionPayment}
+                >
+                  $ Generate payment link
+                </button>
+              )}
+            </div>
+
+            {vendor.paymentLink && (
+              <div style={styles.paymentLinkBox}>
+                <p style={styles.paymentLinkLabel}>
+                  Payment link — Base: ${vendor.basePrice} + ${vendor.fee} fee = <strong>${vendor.total}</strong>
+                </p>
+                <a href={vendor.paymentLink} target="_blank" rel="noopener noreferrer" style={styles.paymentLinkUrl}>{vendor.paymentLink}</a>
+              </div>
+            )}
+          </div>
         ))}
       </div>
-
-      {loading && <p style={styles.loading}>Loading applications...</p>}
-
-      {!loading && filtered.length === 0 && (
-        <p style={styles.loading}>No applications in this category.</p>
-      )}
-
-      {filtered.map(vendor => (
-        <div key={vendor.id} style={styles.card}>
-          <div style={styles.cardHeader}>
-            <div>
-              <h2 style={styles.businessName}>
-                {vendor.businessName || vendor.contactName}
-              </h2>
-              {vendor.businessName && vendor.businessName !== vendor.contactName && (
-                <p style={styles.contactPerson}>Contact: {vendor.contactName}</p>
-              )}
-              <p style={styles.meta}>
-                {vendor.email} · {vendor.phone}
-              </p>
-              {vendor.address && (
-                <p style={styles.meta}>{vendor.address}</p>
-              )}
-            </div>
-            <span style={{
-              ...styles.badge,
-              background: STATUS_COLORS[vendor.status]?.bg || "#eee",
-              color: STATUS_COLORS[vendor.status]?.color || "#333"
-            }}>
-              {STATUS_COLORS[vendor.status]?.label || vendor.status}
-            </span>
-          </div>
-
-          <div style={styles.details}>
-            <span style={styles.pill}>{vendor.category || 'No category'}</span>
-            <span style={styles.pill}>{vendor.boothType || 'No booth selected'}</span>
-            <span style={styles.pill}>{vendor.days || 'Both days'}</span>
-            {vendor.source === 'jotform' && (
-              <span style={{...styles.pill, background: '#e8f4fd', color: '#1a6ea8'}}>
-                JotForm
-              </span>
-            )}
-            {vendor.insuranceAcknowledged && (
-              <span style={{...styles.pill, background: '#e8f5e9', color: '#2d5a27'}}>
-                ✓ Insurance acknowledged
-              </span>
-            )}
-          </div>
-
-          <p style={styles.description}>{vendor.description}</p>
-
-          {vendor.demonstration && (
-            <p style={styles.fieldRow}>
-              <strong>Demonstration:</strong> {vendor.demonstration}
-            </p>
-          )}
-
-          {vendor.website && (
-            <p style={styles.fieldRow}>
-              <strong>Website:</strong>{' '}
-              <a href={`https://${vendor.website.replace('https://','').replace('http://','')}`} target="_blank" rel="noopener noreferrer" style={styles.link}>{vendor.website}</a>
-            </p>
-          )}
-
-          {vendor.additionalNotes && (
-            <p style={styles.fieldRow}>
-              <strong>Additional notes:</strong> {vendor.additionalNotes}
-            </p>
-          )}
-
-          {vendor.address && (
-            <p style={styles.fieldRow}>
-              <strong>Address:</strong> {vendor.address}
-            </p>
-          )}
-
-          <div style={styles.actions}>
-            <button
-              onClick={() => updateStatus(vendor.id, "approved")}
-              style={vendor.status === "approved" ? styles.actionActive : styles.action}
-            >
-              ✓ Approve
-            </button>
-            <button
-              onClick={() => updateStatus(vendor.id, "held")}
-              style={vendor.status === "held" ? styles.actionHeldActive : styles.actionHeld}
-            >
-              ⏸ Hold
-            </button>
-            {vendor.status === "approved" && (
-              <button
-                onClick={() => generatePaymentLink(vendor)}
-                style={styles.actionPayment}
-              >
-                $ Generate payment link
-              </button>
-            )}
-          </div>
-
-          {vendor.paymentLink && (
-            <div style={styles.paymentLinkBox}>
-              <p style={styles.paymentLinkLabel}>
-                Payment link — Base: ${vendor.basePrice} + ${vendor.fee} fee = <strong>${vendor.total}</strong>
-              </p>
-              
-                <a href={vendor.paymentLink} target="_blank" rel="noopener noreferrer" style={styles.paymentLinkUrl}>{vendor.paymentLink}</a>
-            </div>
-          )}
-
-        </div>
-      ))}
     </div>
   );
 }
@@ -414,23 +392,9 @@ const styles = {
     padding: "2rem 1rem",
     fontFamily: "Georgia, serif"
   },
-  navLink: {
-  fontSize: "13px",
-  color: "#2d5a27",
-  textDecoration: "none",
-  border: "1px solid #2d5a27",
-  borderRadius: "6px",
-  padding: "0.4rem 0.8rem"
-},
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  pageHeader: {
     marginBottom: "1.5rem"
   },
-  pageHeader: {
-  marginBottom: "1.5rem"
-},
   title: {
     fontSize: "26px",
     color: "#2d5a27",
@@ -440,14 +404,26 @@ const styles = {
     fontSize: "14px",
     color: "#888"
   },
-  signOut: {
-    background: "none",
-    border: "1px solid #ddd",
+  addButton: {
+    padding: "0.4rem 0.9rem",
     borderRadius: "6px",
-    padding: "0.4rem 0.8rem",
+    border: "1px solid #2d5a27",
+    background: "#2d5a27",
+    color: "#fff",
     fontSize: "13px",
-    cursor: "pointer",
-    color: "#888"
+    cursor: "pointer"
+  },
+  formCard: {
+    background: "#fff",
+    borderRadius: "12px",
+    padding: "1.5rem",
+    marginBottom: "1.5rem",
+    boxShadow: "0 1px 6px rgba(0,0,0,0.07)"
+  },
+  formTitle: {
+    fontSize: "16px",
+    color: "#2d5a27",
+    marginBottom: "1.25rem"
   },
   filters: {
     display: "flex",
