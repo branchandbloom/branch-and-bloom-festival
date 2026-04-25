@@ -80,20 +80,14 @@ function VendorQueue({ onSignOut }) {
     paid: vendors.filter(v => v.status === "paid").length
   };
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.header}>
+return (
   <div>
-    <h1 style={styles.title}>Vendor applications</h1>
-    <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
-  </div>
-  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-    <a href="/admin/passes" style={styles.navLink}>Passes</a>
-    <a href="/admin/sponsors" style={styles.navLink}>Sponsors</a>
-    <button onClick={onSignOut} style={styles.signOut}>Sign out</button>
-  </div>
-</div>
+    <AdminNav onSignOut={onSignOut} />
+    <div style={styles.container}>
+      <div style={styles.pageHeader}>
+        <h1 style={styles.title}>Vendor applications</h1>
+        <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
+      </div>
         <div>
           <h1 style={styles.title}>Vendor applications</h1>
           <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
@@ -248,6 +242,9 @@ const styles = {
     alignItems: "flex-start",
     marginBottom: "1.5rem"
   },
+  pageHeader: {
+  marginBottom: "1.5rem"
+},
   title: {
     fontSize: "26px",
     color: "#2d5a27",
