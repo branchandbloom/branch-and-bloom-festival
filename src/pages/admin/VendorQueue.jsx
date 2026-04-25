@@ -9,6 +9,16 @@ import {
   doc,
   updateDoc
 } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  addDoc
+} from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore";
 
 const STATUS_COLORS = {
   pending: { bg: "#fff8e1", color: "#b8860b", label: "Pending" },
@@ -16,10 +26,169 @@ const STATUS_COLORS = {
   held: { bg: "#fce4ec", color: "#c62828", label: "On hold" },
   paid: { bg: "#e3f2fd", color: "#1565c0", label: "Paid" }
 };
+function ManualVendorForm({ onSave }) {
+  const [form, setForm] = useState({
+    businessName: '',
+    contactName: '',
+    email: '',
+    phone: '',
+    category: '',
+    boothType: '',
+    days: '',
+    description: '',
+    notes: ''
+  });
+  const [saving, setSaving] = useState(false);
 
+  const BOOTH_TYPES = ["10' x 10'", "10' x 20'", "Food Truck", "Non-Profit / Community Table"];
+  const CATEGORIES = ["Florals", "Food & Beverage", "Crafts & Handmade", "Plants & Nursery", "Specialty Drinks", "Jewelry", "Home & Garden", "Non-Profit/Community", "Other"];
+  const DAYS = ["Both days", "Saturday only", "Sunday only"];
+
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  async function handleSubmit() {
+    if (!form.businessName || !form.email) return;
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ flex: 1, marginBottom: '1rem' }}>
+          <label style={formStyles.label}>Business name *</label>
+          <input style={formStyles.input} name="businessName" value={form.businessName} onChange={handleChange} />
+        </div>
+        <div style={{ flex: 1, marginBottom: '1rem' }}>
+          <label style={formStyles.label}>Contact name</label>
+          <input style={formStyles.input} name="contactName" value={form.contactName} onChange={handleChange} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ flex: 1, marginBottom: '1rem' }}>
+          <label style={formStyles.label}>Email *</label>
+          <input style={formStyles.input} name="email" type="email" value={form.email} onChange={handleChange} />
+        </div>
+        <div style={{ flex: 1, marginBottom: '1rem' }}>
+          <label style={formStyles.label}>Phone</label>
+          <input style={formStyles.input} name="phone" value={form.phone} onChange={handleChange} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ flex: 1, marginBottom: '1rem' }}>
+          <label style={formStyles.label}>Category</label>
+          <select style={formStyles.input} name="category" value={form.category} onChange={handleChange}>
+            <option value="">Select category</option>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: 1, marginBottom: '1rem' }}>
+          <label style={formStyles.label}>Booth type</label>
+          <select style={formStyles.input} name="boothType" value={form.boothType} onChange={handleChange}>
+            <option value="">Select booth</option>
+            {BOOTH_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={formStyles.label}>Days</label>
+        <select style={formStyles.input} name="days" value={form.days} onChange={handleChange}>
+          <option value="">Select days</option>
+          {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={formStyles.label}>Description</label>
+        <textarea style={{ ...formStyles.input, height: '80px', resize: 'vertical' }} name="description" value={form.description} onChange={handleChange} />
+      </div>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={formStyles.label}>Internal notes</label>
+        <input style={formStyles.input} name="notes" value={form.notes} onChange={handleChange} />
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        style={form.businessName && form.email ? formStyles.button : formStyles.buttonDisabled}
+        disabled={!form.businessName || !form.email || saving}
+      >
+        {saving ? 'Saving...' : 'Add vendor'}
+      </button>
+    </div>
+  );
+}
+
+const formStyles = {
+  label: {
+    display: 'block',
+    fontSize: '13px',
+    color: '#555',
+    marginBottom: '0.4rem'
+  },
+  addButton: {
+  padding: "0.4rem 0.9rem",
+  borderRadius: "6px",
+  border: "1px solid #2d5a27",
+  background: "#2d5a27",
+  color: "#fff",
+  fontSize: "13px",
+  cursor: "pointer"
+},
+formCard: {
+  background: "#fff",
+  borderRadius: "12px",
+  padding: "1.5rem",
+  marginBottom: "1.5rem",
+  boxShadow: "0 1px 6px rgba(0,0,0,0.07)"
+},
+formTitle: {
+  fontSize: "16px",
+  color: "#2d5a27",
+  marginBottom: "1.25rem"
+},
+  input: {
+    width: '100%',
+    padding: '0.65rem 0.8rem',
+    fontSize: '14px',
+    border: '1px solid #ddd',
+    borderRadius: '6px',
+    boxSizing: 'border-box',
+    fontFamily: 'Georgia, serif'
+  },
+  button: {
+    width: '100%',
+    padding: '0.85rem',
+    fontSize: '15px',
+    background: '#2d5a27',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontFamily: 'Georgia, serif'
+  },
+  buttonDisabled: {
+    width: '100%',
+    padding: '0.85rem',
+    fontSize: '15px',
+    background: '#ccc',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'not-allowed',
+    fontFamily: 'Georgia, serif'
+  }
+};
 function VendorQueue({ onSignOut }) {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState("all");
 
   useEffect(() => {
@@ -85,9 +254,31 @@ return (
     <AdminNav onSignOut={onSignOut} />
     <div style={styles.container}>
       <div style={styles.pageHeader}>
-        <h1 style={styles.title}>Vendor applications</h1>
-        <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
-      </div>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <div>
+      <h1 style={styles.title}>Vendor applications</h1>
+      <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
+    </div>
+    <button onClick={() => setShowForm(!showForm)} style={styles.addButton}>
+      {showForm ? 'Cancel' : '+ Add vendor'}
+    </button>
+  </div>
+</div>
+{showForm && (
+  <div style={styles.formCard}>
+    <h2 style={styles.formTitle}>Add vendor manually</h2>
+    <ManualVendorForm onSave={async (data) => {
+      await addDoc(collection(db, "vendors"), {
+        ...data,
+        status: 'pending',
+        portalAccess: false,
+        source: 'manual',
+        createdAt: serverTimestamp()
+      });
+      setShowForm(false);
+    }} />
+  </div>
+)}
        </div>
 
       <div style={styles.filters}>
