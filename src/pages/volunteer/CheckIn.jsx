@@ -85,38 +85,51 @@ function CheckIn() {
   }
 
   async function handleSearch() {
-    if (!searchTerm.trim()) return;
-    setSearching(true);
-    setSearchResults([]);
+  if (!searchTerm.trim()) return;
+  setSearching(true);
+  setSearchResults([]);
 
-    try {
-      // Search by email
-      const emailQuery = query(
+  try {
+    const term = searchTerm.trim();
+    const termLower = term.toLowerCase();
+
+    // Search by exact email
+    const emailQuery = query(
+      collection(db, "attendees"),
+      where("email", "==", termLower)
+    );
+    const emailSnapshot = await getDocs(emailQuery);
+    let results = emailSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Search by name starting with term
+    if (results.length === 0) {
+      const nameQuery = query(
         collection(db, "attendees"),
-        where("email", "==", searchTerm.toLowerCase().trim())
+        where("name", ">=", term),
+        where("name", "<=", term + '\uf8ff')
       );
-      const emailSnapshot = await getDocs(emailQuery);
-
-      let results = emailSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      // If no email match search by name
-      if (results.length === 0) {
-        const nameQuery = query(
-          collection(db, "attendees"),
-          where("name", "==", searchTerm.trim())
-        );
-        const nameSnapshot = await getDocs(nameQuery);
-        results = nameSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      }
-
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
+      const nameSnapshot = await getDocs(nameQuery);
+      results = nameSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    setSearching(false);
+    // Try lowercase name search
+    if (results.length === 0) {
+      const nameLowerQuery = query(
+        collection(db, "attendees"),
+        where("nameLower", ">=", termLower),
+        where("nameLower", "<=", termLower + '\uf8ff')
+      );
+      const nameLowerSnapshot = await getDocs(nameLowerQuery);
+      results = nameLowerSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    setSearchResults(results);
+  } catch (error) {
+    console.error('Search error:', error);
   }
 
+  setSearching(false);
+}
   const statusConfig = {
     loading: { bg: '#f9f6f0', icon: '🌸', title: 'Looking up ticket...', color: '#555' },
     ready: { bg: '#e8f5e9', icon: '✓', title: 'Valid ticket', color: '#2d5a27' },

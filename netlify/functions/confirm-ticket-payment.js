@@ -78,6 +78,7 @@ export const handler = async function(event, context) {
 
     const attendeeData = {
       name,
+      nameLower: name.toLowerCase(),
       email,
       ticketType,
       ticketLabel,
