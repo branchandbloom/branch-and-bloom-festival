@@ -13,6 +13,7 @@ import GateApp from "./pages/volunteer/GateApp";
 import ComplimentaryPasses from "./pages/admin/ComplimentaryPasses";
 import ClaimPass from "./pages/attendee/ClaimPass";
 import SponsorAdmin from "./pages/admin/SponsorAdmin";
+import AttendeeList from "./pages/admin/AttendeeList";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -52,6 +53,14 @@ function App() {
               : <AdminLogin onLogin={() => {}} />
           }
         />
+        <Route
+  path="/admin/attendees"
+  element={
+    user
+      ? <AttendeeList onSignOut={handleSignOut} />
+      : <AdminLogin onLogin={() => {}} />
+  }
+/>
         <Route path="/tickets/success" element={<TicketSuccess />} />
         <Route path="/tickets" element={<TicketPurchase />} />
         <Route path="/" element={<Navigate to="/vendor/register" />} />
