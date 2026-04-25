@@ -88,7 +88,7 @@ return (
         <h1 style={styles.title}>Vendor applications</h1>
         <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
       </div>
-       
+       </div>
 
       <div style={styles.filters}>
         {["all", "pending", "approved", "held", "paid"].map(f => (
