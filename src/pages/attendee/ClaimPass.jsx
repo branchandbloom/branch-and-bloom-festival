@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { db } from "../../firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import QRCode from "qrcode";
 
 function ClaimPass() {
   const [status, setStatus] = useState('loading');
   const [pass, setPass] = useState(null);
-  const [qrDataURL, setQrDataURL] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -33,12 +31,7 @@ function ClaimPass() {
         const passData = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
         setPass(passData);
 
-        const qr = await QRCode.toDataURL(
-          `https://branch-and-bloom-festival.netlify.app/checkin?token=${token}`,
-          { width: 300, margin: 2, color: { dark: '#2d5a27', light: '#ffffff' } }
-        );
-        setQrDataURL(qr);
-        setStatus('success');
+            setStatus('success');
       } catch (error) {
         console.error('Load pass error:', error);
         setStatus('error');
@@ -82,12 +75,16 @@ function ClaimPass() {
           <p style={styles.passType}>{pass.ticketLabel}</p>
         </div>
 
-        {qrDataURL && (
-          <div style={styles.qrContainer}>
-            <img src={qrDataURL} alt="Your festival pass QR code" style={styles.qrImage} />
-            <p style={styles.qrLabel}>Show this at the gate</p>
-          </div>
-        )}
+      {pass && (
+  <div style={styles.qrContainer}>
+    <img
+      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://branch-and-bloom-festival.netlify.app/checkin?token=' + pass.qrToken)}&color=2d5a27`}
+      alt="Your festival pass QR code"
+      style={styles.qrImage}
+    />
+    <p style={styles.qrLabel}>Show this at the gate</p>
+  </div>
+)}
 
         <div style={styles.infoBox}>
           <p style={styles.infoRow}>📍 Screenshot or save this page</p>
