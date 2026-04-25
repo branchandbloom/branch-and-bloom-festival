@@ -113,43 +113,10 @@ function ManualVendorForm({ onSave }) {
 }
 
 const formStyles = {
-  label: {
-    display: 'block',
-    fontSize: '13px',
-    color: '#555',
-    marginBottom: '0.4rem'
-  },
-  input: {
-    width: '100%',
-    padding: '0.65rem 0.8rem',
-    fontSize: '14px',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    boxSizing: 'border-box',
-    fontFamily: 'Georgia, serif'
-  },
-  button: {
-    width: '100%',
-    padding: '0.85rem',
-    fontSize: '15px',
-    background: '#2d5a27',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontFamily: 'Georgia, serif'
-  },
-  buttonDisabled: {
-    width: '100%',
-    padding: '0.85rem',
-    fontSize: '15px',
-    background: '#ccc',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'not-allowed',
-    fontFamily: 'Georgia, serif'
-  }
+  label: { display: 'block', fontSize: '13px', color: '#555', marginBottom: '0.4rem' },
+  input: { width: '100%', padding: '0.65rem 0.8rem', fontSize: '14px', border: '1px solid #ddd', borderRadius: '6px', boxSizing: 'border-box', fontFamily: 'Georgia, serif' },
+  button: { width: '100%', padding: '0.85rem', fontSize: '15px', background: '#2d5a27', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'Georgia, serif' },
+  buttonDisabled: { width: '100%', padding: '0.85rem', fontSize: '15px', background: '#ccc', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'not-allowed', fontFamily: 'Georgia, serif' }
 };
 
 function VendorQueue({ onSignOut }) {
@@ -171,6 +138,17 @@ function VendorQueue({ onSignOut }) {
     await updateDoc(doc(db, "vendors", vendorId), { status: newStatus });
   }
 
+  async function markPaidManually(vendor) {
+    const method = prompt('Payment method? (check / cash / transfer)');
+    if (method) {
+      await updateDoc(doc(db, "vendors", vendor.id), {
+        status: 'paid',
+        paymentMethod: method,
+        paidAt: new Date().toISOString()
+      });
+    }
+  }
+
   async function generatePaymentLink(vendor) {
     try {
       const response = await fetch('/.netlify/functions/create-payment-link', {
@@ -184,9 +162,7 @@ function VendorQueue({ onSignOut }) {
           email: vendor.email
         })
       });
-
       const data = await response.json();
-
       if (data.success) {
         await updateDoc(doc(db, "vendors", vendor.id), {
           paymentLink: data.paymentLink,
@@ -203,23 +179,37 @@ function VendorQueue({ onSignOut }) {
       alert('Error: ' + error.message);
     }
   }
-{vendor.status === "approved" && (
-  <button
-    onClick={() => {
-      const method = prompt('Payment method? (check / cash / transfer)');
-      if (method) {
-        updateDoc(doc(db, "vendors", vendor.id), {
-          status: 'paid',
-          paymentMethod: method,
-          paidAt: new Date().toISOString()
+
+  async function generateVendorPasses(vendor) {
+    try {
+      for (let i = 0; i < 2; i++) {
+        const token = Math.random().toString(36).substring(2, 15) +
+          Math.random().toString(36).substring(2, 15);
+        const claimUrl = `https://branch-and-bloom-festival.netlify.app/pass?token=${token}`;
+        await addDoc(collection(db, "attendees"), {
+          name: `${vendor.businessName || vendor.contactName} — Vendor Pass ${i + 1}`,
+          nameLower: `${(vendor.businessName || vendor.contactName).toLowerCase()} vendor pass ${i + 1}`,
+          email: `vendor-${token.substring(0, 6)}@branchandbloom`,
+          ticketType: 'vendor',
+          ticketLabel: 'Vendor Pass',
+          groupSize: 1,
+          donation: 0,
+          total: 0,
+          qrToken: token,
+          checkedInDay1: false,
+          checkedInDay2: false,
+          status: 'confirmed',
+          source: 'vendor_comp',
+          vendorId: vendor.id,
+          claimUrl,
+          createdAt: serverTimestamp()
         });
       }
-    }}
-    style={styles.actionManual}
-  >
-    ✓ Mark paid manually
-  </button>
-)}
+      alert(`2 vendor passes generated for ${vendor.businessName || vendor.contactName}!\n\nFind them in the Passes section.`);
+    } catch (error) {
+      alert('Error generating passes: ' + error.message);
+    }
+  }
 
   const filtered = filter === "all"
     ? vendors
@@ -232,42 +222,11 @@ function VendorQueue({ onSignOut }) {
     held: vendors.filter(v => v.status === "held").length,
     paid: vendors.filter(v => v.status === "paid").length
   };
-async function generateVendorPasses(vendor) {
-  try {
-    for (let i = 0; i < 2; i++) {
-      const token = Math.random().toString(36).substring(2, 15) +
-        Math.random().toString(36).substring(2, 15);
-      const claimUrl = `https://branch-and-bloom-festival.netlify.app/pass?token=${token}`;
 
-      await addDoc(collection(db, "attendees"), {
-        name: `${vendor.businessName || vendor.contactName} — Vendor Pass ${i + 1}`,
-        nameLower: `${(vendor.businessName || vendor.contactName).toLowerCase()} vendor pass ${i + 1}`,
-        email: `vendor-${token.substring(0, 6)}@branchandbloom`,
-        ticketType: 'vendor',
-        ticketLabel: 'Vendor Pass',
-        groupSize: 1,
-        donation: 0,
-        total: 0,
-        qrToken: token,
-        checkedInDay1: false,
-        checkedInDay2: false,
-        status: 'confirmed',
-        source: 'vendor_comp',
-        vendorId: vendor.id,
-        claimUrl,
-        createdAt: serverTimestamp()
-      });
-    }
-    alert(`2 vendor passes generated for ${vendor.businessName || vendor.contactName}!\n\nFind them in the Passes section.`);
-  } catch (error) {
-    alert('Error generating passes: ' + error.message);
-  }
-}
   return (
     <div>
       <AdminNav onSignOut={onSignOut} />
       <div style={styles.container}>
-
         <div style={styles.pageHeader}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
@@ -309,7 +268,6 @@ async function generateVendorPasses(vendor) {
         </div>
 
         {loading && <p style={styles.loading}>Loading applications...</p>}
-
         {!loading && filtered.length === 0 && (
           <p style={styles.loading}>No applications in this category.</p>
         )}
@@ -324,12 +282,8 @@ async function generateVendorPasses(vendor) {
                 {vendor.businessName && vendor.businessName !== vendor.contactName && (
                   <p style={styles.contactPerson}>Contact: {vendor.contactName}</p>
                 )}
-                <p style={styles.meta}>
-                  {vendor.email} · {vendor.phone}
-                </p>
-                {vendor.address && (
-                  <p style={styles.meta}>{vendor.address}</p>
-                )}
+                <p style={styles.meta}>{vendor.email} · {vendor.phone}</p>
+                {vendor.address && <p style={styles.meta}>{vendor.address}</p>}
               </div>
               <span style={{
                 ...styles.badge,
@@ -345,53 +299,35 @@ async function generateVendorPasses(vendor) {
               <span style={styles.pill}>{vendor.boothType || 'No booth selected'}</span>
               <span style={styles.pill}>{vendor.days || 'Both days'}</span>
               {vendor.source === 'jotform' && (
-                <span style={{...styles.pill, background: '#e8f4fd', color: '#1a6ea8'}}>
-                  JotForm
-                </span>
+                <span style={{...styles.pill, background: '#e8f4fd', color: '#1a6ea8'}}>JotForm</span>
               )}
               {vendor.source === 'manual' && (
-                <span style={{...styles.pill, background: '#f3e5f5', color: '#6a1b9a'}}>
-                  Manual
-                </span>
+                <span style={{...styles.pill, background: '#f3e5f5', color: '#6a1b9a'}}>Manual</span>
               )}
               {vendor.insuranceAcknowledged && (
-                <span style={{...styles.pill, background: '#e8f5e9', color: '#2d5a27'}}>
-                  ✓ Insurance acknowledged
-                </span>
+                <span style={{...styles.pill, background: '#e8f5e9', color: '#2d5a27'}}>✓ Insurance acknowledged</span>
               )}
             </div>
 
             <p style={styles.description}>{vendor.description}</p>
 
             {vendor.demonstration && (
-              <p style={styles.fieldRow}>
-                <strong>Demonstration:</strong> {vendor.demonstration}
-              </p>
+              <p style={styles.fieldRow}><strong>Demonstration:</strong> {vendor.demonstration}</p>
             )}
-
             {vendor.website && (
               <p style={styles.fieldRow}>
                 <strong>Website:</strong>{' '}
                 <a href={`https://${vendor.website.replace('https://','').replace('http://','')}`} target="_blank" rel="noopener noreferrer" style={styles.link}>{vendor.website}</a>
               </p>
             )}
-
             {vendor.additionalNotes && (
-              <p style={styles.fieldRow}>
-                <strong>Additional notes:</strong> {vendor.additionalNotes}
-              </p>
+              <p style={styles.fieldRow}><strong>Additional notes:</strong> {vendor.additionalNotes}</p>
             )}
-
             {vendor.address && (
-              <p style={styles.fieldRow}>
-                <strong>Address:</strong> {vendor.address}
-              </p>
+              <p style={styles.fieldRow}><strong>Address:</strong> {vendor.address}</p>
             )}
-
             {vendor.notes && (
-              <p style={styles.fieldRow}>
-                <strong>Notes:</strong> {vendor.notes}
-              </p>
+              <p style={styles.fieldRow}><strong>Notes:</strong> {vendor.notes}</p>
             )}
 
             <div style={styles.actions}>
@@ -407,22 +343,21 @@ async function generateVendorPasses(vendor) {
               >
                 ⏸ Hold
               </button>
-            {vendor.status === "approved" && (
-  <button
-    onClick={() => generatePaymentLink(vendor)}
-    style={styles.actionPayment}
-  >
-    $ Generate payment link
-  </button>
-)}
-{vendor.status === "paid" && (
-  <button
-    onClick={() => generateVendorPasses(vendor)}
-    style={styles.actionPasses}
-  >
-    🎟 Generate vendor passes
-  </button>
-)}
+              {vendor.status === "approved" && (
+                <button onClick={() => generatePaymentLink(vendor)} style={styles.actionPayment}>
+                  $ Generate payment link
+                </button>
+              )}
+              {vendor.status === "approved" && (
+                <button onClick={() => markPaidManually(vendor)} style={styles.actionManual}>
+                  ✓ Mark paid manually
+                </button>
+              )}
+              {vendor.status === "paid" && (
+                <button onClick={() => generateVendorPasses(vendor)} style={styles.actionPasses}>
+                  🎟 Generate vendor passes
+                </button>
+              )}
             </div>
 
             {vendor.paymentLink && (
@@ -441,222 +376,39 @@ async function generateVendorPasses(vendor) {
 }
 
 const styles = {
-  container: {
-    maxWidth: "780px",
-    margin: "0 auto",
-    padding: "2rem 1rem",
-    fontFamily: "Georgia, serif"
-  },
-  pageHeader: {
-    marginBottom: "1.5rem"
-  },
-  title: {
-    fontSize: "26px",
-    color: "#2d5a27",
-    marginBottom: "0.25rem"
-  },
-  subtitle: {
-    fontSize: "14px",
-    color: "#888"
-  },
-  addButton: {
-    padding: "0.4rem 0.9rem",
-    borderRadius: "6px",
-    border: "1px solid #2d5a27",
-    background: "#2d5a27",
-    color: "#fff",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  formCard: {
-    background: "#fff",
-    borderRadius: "12px",
-    padding: "1.5rem",
-    marginBottom: "1.5rem",
-    boxShadow: "0 1px 6px rgba(0,0,0,0.07)"
-  },
-  formTitle: {
-    fontSize: "16px",
-    color: "#2d5a27",
-    marginBottom: "1.25rem"
-  },
-  filters: {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "1.5rem",
-    flexWrap: "wrap"
-  },
-  filter: {
-    padding: "0.4rem 0.9rem",
-    borderRadius: "20px",
-    border: "1px solid #ddd",
-    background: "#fff",
-    fontSize: "13px",
-    cursor: "pointer",
-    color: "#555"
-  },
-  filterActive: {
-    padding: "0.4rem 0.9rem",
-    borderRadius: "20px",
-    border: "1px solid #2d5a27",
-    background: "#2d5a27",
-    fontSize: "13px",
-    cursor: "pointer",
-    color: "#fff"
-  },
-  loading: {
-    color: "#888",
-    fontSize: "15px",
-    padding: "2rem 0"
-  },
-  card: {
-    background: "#fff",
-    borderRadius: "10px",
-    padding: "1.5rem",
-    marginBottom: "1rem",
-    boxShadow: "0 1px 6px rgba(0,0,0,0.07)"
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "0.75rem"
-  },
-  businessName: {
-    fontSize: "18px",
-    color: "#2d5a27",
-    marginBottom: "0.2rem"
-  },
-  contactPerson: {
-    fontSize: "13px",
-    color: "#666",
-    marginBottom: "0.2rem"
-  },
-  meta: {
-    fontSize: "13px",
-    color: "#888"
-  },
-  badge: {
-    padding: "0.3rem 0.7rem",
-    borderRadius: "12px",
-    fontSize: "12px",
-    fontWeight: "600"
-  },
-  details: {
-    display: "flex",
-    gap: "0.5rem",
-    marginBottom: "0.75rem",
-    flexWrap: "wrap"
-  },
-  pill: {
-    background: "#f0ebe3",
-    color: "#555",
-    padding: "0.2rem 0.6rem",
-    borderRadius: "10px",
-    fontSize: "12px"
-  },
-  description: {
-    fontSize: "14px",
-    color: "#555",
-    lineHeight: "1.6",
-    marginBottom: "0.5rem"
-  },
-  fieldRow: {
-    fontSize: "14px",
-    color: "#555",
-    lineHeight: "1.6",
-    marginBottom: "0.4rem"
-  },
-  link: {
-    color: "#2d5a27",
-    textDecoration: "none"
-  },
-  actions: {
-    display: "flex",
-    gap: "0.5rem",
-    marginTop: "1rem",
-    flexWrap: "wrap"
-  },
-  action: {
-    padding: "0.4rem 1rem",
-    borderRadius: "6px",
-    border: "1px solid #2d5a27",
-    background: "#fff",
-    color: "#2d5a27",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  actionActive: {
-    padding: "0.4rem 1rem",
-    borderRadius: "6px",
-    border: "1px solid #2d5a27",
-    background: "#2d5a27",
-    color: "#fff",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  actionHeld: {
-    padding: "0.4rem 1rem",
-    borderRadius: "6px",
-    border: "1px solid #c62828",
-    background: "#fff",
-    color: "#c62828",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  actionHeldActive: {
-    padding: "0.4rem 1rem",
-    borderRadius: "6px",
-    border: "1px solid #c62828",
-    background: "#c62828",
-    color: "#fff",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  actionManual: {
-  padding: "0.4rem 1rem",
-  borderRadius: "6px",
-  border: "1px solid #2d5a27",
-  background: "#fff",
-  color: "#2d5a27",
-  fontSize: "13px",
-  cursor: "pointer"
-},
-  actionPayment: {
-    padding: "0.4rem 1rem",
-    borderRadius: "6px",
-    border: "1px solid #1565c0",
-    background: "#fff",
-    color: "#1565c0",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  paymentLinkBox: {
-    marginTop: "1rem",
-    padding: "0.75rem",
-    background: "#e3f2fd",
-    borderRadius: "6px",
-    border: "1px solid #90caf9"
-  },
-  paymentLinkLabel: {
-    fontSize: "13px",
-    color: "#1565c0",
-    marginBottom: "0.4rem"
-  },
-  paymentLinkUrl: {
-    fontSize: "12px",
-    color: "#1565c0",
-    wordBreak: "break-all"
-  },
-  actionPasses: {
-    padding: "0.4rem 1rem",
-    borderRadius: "6px",
-    border: "1px solid #2d5a27",
-    background: "#f0f7ee",
-    color: "#2d5a27",
-    fontSize: "13px",
-    cursor: "pointer"
-  }
+  container: { maxWidth: "780px", margin: "0 auto", padding: "2rem 1rem", fontFamily: "Georgia, serif" },
+  pageHeader: { marginBottom: "1.5rem" },
+  title: { fontSize: "26px", color: "#2d5a27", marginBottom: "0.25rem" },
+  subtitle: { fontSize: "14px", color: "#888" },
+  addButton: { padding: "0.4rem 0.9rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#2d5a27", color: "#fff", fontSize: "13px", cursor: "pointer" },
+  formCard: { background: "#fff", borderRadius: "12px", padding: "1.5rem", marginBottom: "1.5rem", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" },
+  formTitle: { fontSize: "16px", color: "#2d5a27", marginBottom: "1.25rem" },
+  filters: { display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" },
+  filter: { padding: "0.4rem 0.9rem", borderRadius: "20px", border: "1px solid #ddd", background: "#fff", fontSize: "13px", cursor: "pointer", color: "#555" },
+  filterActive: { padding: "0.4rem 0.9rem", borderRadius: "20px", border: "1px solid #2d5a27", background: "#2d5a27", fontSize: "13px", cursor: "pointer", color: "#fff" },
+  loading: { color: "#888", fontSize: "15px", padding: "2rem 0" },
+  card: { background: "#fff", borderRadius: "10px", padding: "1.5rem", marginBottom: "1rem", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" },
+  cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" },
+  businessName: { fontSize: "18px", color: "#2d5a27", marginBottom: "0.2rem" },
+  contactPerson: { fontSize: "13px", color: "#666", marginBottom: "0.2rem" },
+  meta: { fontSize: "13px", color: "#888" },
+  badge: { padding: "0.3rem 0.7rem", borderRadius: "12px", fontSize: "12px", fontWeight: "600" },
+  details: { display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap" },
+  pill: { background: "#f0ebe3", color: "#555", padding: "0.2rem 0.6rem", borderRadius: "10px", fontSize: "12px" },
+  description: { fontSize: "14px", color: "#555", lineHeight: "1.6", marginBottom: "0.5rem" },
+  fieldRow: { fontSize: "14px", color: "#555", lineHeight: "1.6", marginBottom: "0.4rem" },
+  link: { color: "#2d5a27", textDecoration: "none" },
+  actions: { display: "flex", gap: "0.5rem", marginTop: "1rem", flexWrap: "wrap" },
+  action: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#fff", color: "#2d5a27", fontSize: "13px", cursor: "pointer" },
+  actionActive: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#2d5a27", color: "#fff", fontSize: "13px", cursor: "pointer" },
+  actionHeld: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #c62828", background: "#fff", color: "#c62828", fontSize: "13px", cursor: "pointer" },
+  actionHeldActive: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #c62828", background: "#c62828", color: "#fff", fontSize: "13px", cursor: "pointer" },
+  actionPayment: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #1565c0", background: "#fff", color: "#1565c0", fontSize: "13px", cursor: "pointer" },
+  actionManual: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#fff", color: "#2d5a27", fontSize: "13px", cursor: "pointer" },
+  actionPasses: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#f0f7ee", color: "#2d5a27", fontSize: "13px", cursor: "pointer" },
+  paymentLinkBox: { marginTop: "1rem", padding: "0.75rem", background: "#e3f2fd", borderRadius: "6px", border: "1px solid #90caf9" },
+  paymentLinkLabel: { fontSize: "13px", color: "#1565c0", marginBottom: "0.4rem" },
+  paymentLinkUrl: { fontSize: "12px", color: "#1565c0", wordBreak: "break-all" }
 };
 
 export default VendorQueue;
