@@ -12,18 +12,31 @@ async function saveAttendeeToFirestore(attendeeData) {
   const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
   const apiKey = process.env.VITE_FIREBASE_API_KEY;
 
- const fields = {};
-for (const [key, value] of Object.entries(attendeeData)) {
-  if (typeof value === 'string') fields[key] = { stringValue: value };
-  if (typeof value === 'boolean') fields[key] = { booleanValue: value };
-  if (typeof value === 'number') {
-    if (Number.isInteger(value)) {
-      fields[key] = { integerValue: value };
-    } else {
-      fields[key] = { doubleValue: value };
+  const fields = {};
+  for (const [key, value] of Object.entries(attendeeData)) {
+    if (typeof value === 'string') fields[key] = { stringValue: value };
+    if (typeof value === 'boolean') fields[key] = { booleanValue: value };
+    if (typeof value === 'number') {
+      if (Number.isInteger(value)) {
+        fields[key] = { integerValue: value };
+      } else {
+        fields[key] = { doubleValue: value };
+      }
     }
   }
-}
+
+  const postData = JSON.stringify({ fields });
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'firestore.googleapis.com',
+      path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
 
     const req = https.request(options, res => {
       let data = '';
@@ -56,55 +69,6 @@ export const handler = async function(event, context) {
 
     const {
       ticketType,
-      ticketLabel,
-      groupSize,
-      name,
-      email,
-      donation
-    } = session.metadata;
-
-    const qrToken = generateQRToken();
-
-    const attendeeData = {
-      name,
-      email,
-      ticketType,
-      ticketLabel,
-      groupSize: parseInt(groupSize) || 1,
-      donation: parseFloat(donation) || 0,
-      total: session.amount_total / 100,
-      stripeSessionId: sessionId,
-      qrToken,
-      checkedInDay1: false,
-      checkedInDay2: false,
-      status: 'confirmed',
-      source: 'online',
-      createdAt: new Date().toISOString()
-    };
-
-    const result = await saveAttendeeToFirestore(attendeeData);
-    console.log('Attendee saved:', result.status, result.body);
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        attendee: {
-          name,
-          email,
-          ticketLabel,
-          groupSize: parseInt(groupSize) || 1,
-          donation: parseFloat(donation) || 0,
-          qrToken
-        }
-      })
-    };
-
-  } catch (error) {
-    console.error('Confirmation error:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: error.message })
-    };
-  }
-};
+      ticketLabel
+cat netlify/functions/confirm-ticket-payment.js | grep hostname
+cat netlify/functions/confirm-ticket-payment.js | grep hostname
