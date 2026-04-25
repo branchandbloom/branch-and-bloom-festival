@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { db } from "../../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 function TicketSuccess() {
   const [status, setStatus] = useState('loading');
   const [attendee, setAttendee] = useState(null);
+  const [qrDataURL, setQrDataURL] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -15,29 +14,28 @@ function TicketSuccess() {
       return;
     }
 
-   async function confirmPayment() {
-  try {
-    console.log('Session ID:', sessionId);
-    const response = await fetch('/.netlify/functions/confirm-ticket-payment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId })
-    });
-    console.log('Response status:', response.status);
-    const data = await response.json();
-    console.log('Response data:', data);
+    async function confirmPayment() {
+      try {
+        const response = await fetch('/.netlify/functions/confirm-ticket-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId })
+        });
 
-    if (data.success) {
-      setAttendee(data.attendee);
-      setStatus('success');
-    } else {
-      setStatus('error');
+        const data = await response.json();
+
+        if (data.success) {
+          setAttendee(data.attendee);
+          setQrDataURL(data.qrDataURL);
+          setStatus('success');
+        } else {
+          setStatus('error');
+        }
+      } catch (error) {
+        console.error('Confirmation error:', error);
+        setStatus('error');
+      }
     }
-  } catch (error) {
-    console.error('Confirmation error:', error);
-    setStatus('error');
-  }
-}
 
     confirmPayment();
   }, []);
@@ -71,9 +69,17 @@ function TicketSuccess() {
         <div style={styles.icon}>🌸</div>
         <h1 style={styles.title}>You're in!</h1>
         <p style={styles.text}>
-          Thank you {attendee?.name}! Your ticket confirmation and QR code
-          are on their way to {attendee?.email}.
+          Thank you {attendee?.name}! Your ticket confirmation is below.
+          Save this QR code — you'll need it at the gate.
         </p>
+
+        {qrDataURL && (
+          <div style={styles.qrContainer}>
+            <img src={qrDataURL} alt="Your ticket QR code" style={styles.qrImage} />
+            <p style={styles.qrLabel}>Show this at the gate</p>
+          </div>
+        )}
+
         <div style={styles.detailBox}>
           <p style={styles.detailRow}>
             <strong>Ticket:</strong> {attendee?.ticketLabel}
@@ -92,8 +98,9 @@ function TicketSuccess() {
             <strong>Event:</strong> September 26–27, 2026
           </p>
         </div>
+
         <p style={styles.subtext}>
-          Check your email for your QR code — you'll need it at the gate.
+          A copy of this confirmation has been sent to {attendee?.email}.
           Can't find it? Check your spam folder or contact us at festival@branchandbloomnh.com
         </p>
       </div>
@@ -134,6 +141,26 @@ const styles = {
     color: "#555",
     lineHeight: "1.7",
     marginBottom: "1.5rem"
+  },
+  qrContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    margin: "1.5rem 0",
+    padding: "1.5rem",
+    background: "#f9f6f0",
+    borderRadius: "12px",
+    border: "2px solid #2d5a27"
+  },
+  qrImage: {
+    width: "200px",
+    height: "200px",
+    marginBottom: "0.75rem"
+  },
+  qrLabel: {
+    fontSize: "13px",
+    color: "#2d5a27",
+    fontWeight: "600"
   },
   detailBox: {
     background: "#f9f6f0",
