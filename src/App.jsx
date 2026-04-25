@@ -6,6 +6,7 @@ import VendorRegistration from "./pages/vendor/VendorRegistration";
 import AdminLogin from "./pages/admin/AdminLogin";
 import VendorQueue from "./pages/admin/VendorQueue";
 import TicketPurchase from "./pages/attendee/TicketPurchase";
+import TicketSuccess from "./pages/attendee/TicketSuccess";
 
 function App() {
   const [user, setUser] = useState(null);
