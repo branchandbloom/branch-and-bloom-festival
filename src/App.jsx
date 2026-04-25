@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import VendorRegistration from "./pages/vendor/VendorRegistration";
 import AdminLogin from "./pages/admin/AdminLogin";
 import VendorQueue from "./pages/admin/VendorQueue";
+import TicketPurchase from "./pages/attendee/TicketPurchase";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -36,6 +37,7 @@ function App() {
               : <AdminLogin onLogin={() => {}} />
           }
         />
+        <Route path="/tickets" element={<TicketPurchase />} />
         <Route path="/" element={<Navigate to="/vendor/register" />} />
       </Routes>
     </BrowserRouter>
