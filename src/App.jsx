@@ -9,6 +9,7 @@ import TicketPurchase from "./pages/attendee/TicketPurchase";
 import TicketSuccess from "./pages/attendee/TicketSuccess";
 import CheckIn from "./pages/volunteer/CheckIn";
 import DoorSales from "./pages/volunteer/DoorSales";
+import GateApp from "./pages/volunteer/GateApp";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -45,6 +46,7 @@ function App() {
         <Route path="/" element={<Navigate to="/vendor/register" />} />
         <Route path="/checkin" element={<CheckIn />} />
         <Route path="/door" element={<DoorSales />} />
+        <Route path="/gate" element={<GateApp />} />
       </Routes>
     </BrowserRouter>
   );
