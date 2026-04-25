@@ -106,7 +106,23 @@ function DoorSales() {
       <div style={styles.card}>
         <h1 style={styles.title}>Door Sales</h1>
         <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
+<div style={styles.qrSection}>
+  <p style={styles.qrTitle}>💳 Pay by card</p>
+  <p style={styles.qrSubtext}>
+    Attendee scans this QR with their phone to purchase online
+  </p>
+  <img
+    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://branch-and-bloom-festival.netlify.app/tickets')}&color=2d5a27`}
+    alt="Ticket purchase QR code"
+    style={styles.qrImage}
+  />
+</div>
 
+<div style={styles.divider}>
+  <div style={styles.dividerLine}></div>
+  <span>or cash below</span>
+  <div style={styles.dividerLine}></div>
+</div>
         <h3 style={styles.sectionTitle}>Select ticket</h3>
         {TICKETS.map(ticket => (
           <div
@@ -136,9 +152,6 @@ function DoorSales() {
             </select>
           </div>
         )}
-
-        <h3 style={styles.sectionTitle}>Payment method</h3>
-        <div style={styles.paymentRow}>
           <button
             onClick={() => setPaymentMethod('cash')}
             style={paymentMethod === 'cash' ? styles.paymentActive : styles.paymentBtn}
@@ -423,6 +436,88 @@ const styles = {
     fontSize: "14px",
     color: "#555",
     marginBottom: "0.3rem"
+  }
+  detail: {
+    fontSize: "14px",
+    color: "#555",
+    marginBottom: "0.3rem"
+  },
+  qrSection: {
+    textAlign: "center",
+    padding: "1rem",
+    background: "#f0f7ee",
+    borderRadius: "12px",
+    marginBottom: "1.5rem",
+    border: "2px solid #2d5a27"
+  },
+  qrTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#2d5a27",
+    marginBottom: "0.5rem"
+  },
+  qrSubtext: {
+    fontSize: "13px",
+    color: "#555",
+    marginBottom: "1rem"
+  },
+  qrImage: {
+    width: "180px",
+    height: "180px"
+  },
+  divider: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    margin: "1.5rem 0",
+    color: "#aaa",
+    fontSize: "13px"
+  },
+  dividerLine: {
+    flex: 1,
+    height: "1px",
+    background: "#eee"
+  },
+  detail: {
+    fontSize: "14px",
+    color: "#555",
+    marginBottom: "0.3rem"
+  },
+  qrSection: {
+    textAlign: "center",
+    padding: "1rem",
+    background: "#f0f7ee",
+    borderRadius: "12px",
+    marginBottom: "1.5rem",
+    border: "2px solid #2d5a27"
+  },
+  qrTitle: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#2d5a27",
+    marginBottom: "0.5rem"
+  },
+  qrSubtext: {
+    fontSize: "13px",
+    color: "#555",
+    marginBottom: "1rem"
+  },
+  qrImage: {
+    width: "180px",
+    height: "180px"
+  },
+  divider: {
+    display: "flex",
+    alignItems: "center",
+    gap: "1rem",
+    margin: "1.5rem 0",
+    color: "#aaa",
+    fontSize: "13px"
+  },
+  dividerLine: {
+    flex: 1,
+    height: "1px",
+    background: "#eee"
   }
 };
 
