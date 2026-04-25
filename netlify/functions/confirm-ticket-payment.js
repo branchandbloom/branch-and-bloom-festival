@@ -1,5 +1,5 @@
-Import Stripe from 'stripe';
-Import https from 'https';
+import Stripe from 'stripe';
+import https from 'https';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function generateQRToken() {
