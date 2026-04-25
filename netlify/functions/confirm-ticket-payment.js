@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
 import https from 'https';
+import QRCode from 'qrcode';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 function generateQRToken() {
@@ -28,8 +30,8 @@ async function saveAttendeeToFirestore(attendeeData) {
 
   return new Promise((resolve, reject) => {
     const options = {
-        hostname: 'firestore.googleapis.com',
-        path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
+      hostname: 'firestore.googleapis.com',
+      path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +58,6 @@ export const handler = async function(event, context) {
 
   try {
     const { sessionId } = JSON.parse(event.body);
-
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== 'paid') {
@@ -66,16 +67,14 @@ export const handler = async function(event, context) {
       };
     }
 
-    const {
-      ticketType,
-      ticketLabel,
-      groupSize,
-      name,
-      email,
-      donation
-    } = session.metadata;
-
+    const { ticketType, ticketLabel, groupSize, name, email, donation } = session.metadata;
     const qrToken = generateQRToken();
+
+    const qrDataURL = await QRCode.toDataURL(qrToken, {
+      width: 300,
+      margin: 2,
+      color: { dark: '#2d5a27', light: '#ffffff' }
+    });
 
     const attendeeData = {
       name,
@@ -95,12 +94,13 @@ export const handler = async function(event, context) {
     };
 
     const result = await saveAttendeeToFirestore(attendeeData);
-    console.log('Attendee saved:', result.status, result.body);
+    console.log('Attendee saved:', result.status);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
+        qrDataURL,
         attendee: {
           name,
           email,
