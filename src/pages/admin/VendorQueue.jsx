@@ -203,15 +203,17 @@ function VendorQueue({ onSignOut }) {
       alert('Error: ' + error.message);
     }
   }
-  {vendor.status === "approved" && (
+{vendor.status === "approved" && (
   <button
     onClick={() => {
       const method = prompt('Payment method? (check / cash / transfer)');
-      if (method) updateDoc(doc(db, "vendors", vendor.id), {
-        status: 'paid',
-        paymentMethod: method,
-        paidAt: new Date().toISOString()
-      });
+      if (method) {
+        updateDoc(doc(db, "vendors", vendor.id), {
+          status: 'paid',
+          paymentMethod: method,
+          paidAt: new Date().toISOString()
+        });
+      }
     }}
     style={styles.actionManual}
   >
