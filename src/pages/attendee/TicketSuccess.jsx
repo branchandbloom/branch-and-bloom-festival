@@ -15,27 +15,29 @@ function TicketSuccess() {
       return;
     }
 
-    async function confirmPayment() {
-      try {
-        const response = await fetch('/.netlify/functions/confirm-ticket-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId })
-        });
+   async function confirmPayment() {
+  try {
+    console.log('Session ID:', sessionId);
+    const response = await fetch('/.netlify/functions/confirm-ticket-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId })
+    });
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Response data:', data);
 
-        const data = await response.json();
-
-        if (data.success) {
-          setAttendee(data.attendee);
-          setStatus('success');
-        } else {
-          setStatus('error');
-        }
-      } catch (error) {
-        console.error('Confirmation error:', error);
-        setStatus('error');
-      }
+    if (data.success) {
+      setAttendee(data.attendee);
+      setStatus('success');
+    } else {
+      setStatus('error');
     }
+  } catch (error) {
+    console.error('Confirmation error:', error);
+    setStatus('error');
+  }
+}
 
     confirmPayment();
   }, []);
