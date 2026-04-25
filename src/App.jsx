@@ -10,6 +10,7 @@ import TicketSuccess from "./pages/attendee/TicketSuccess";
 import CheckIn from "./pages/volunteer/CheckIn";
 import DoorSales from "./pages/volunteer/DoorSales";
 import GateApp from "./pages/volunteer/GateApp";
+import ComplimentaryPasses from "./pages/admin/ComplimentaryPasses";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -32,6 +33,14 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+  path="/admin/passes"
+  element={
+    user
+      ? <ComplimentaryPasses onSignOut={handleSignOut} />
+      : <AdminLogin onLogin={() => {}} />
+  }
+/>
         <Route path="/vendor/register" element={<VendorRegistration />} />
         <Route
           path="/admin"

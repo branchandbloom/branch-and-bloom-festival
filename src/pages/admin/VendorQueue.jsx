@@ -82,6 +82,16 @@ function VendorQueue({ onSignOut }) {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
+        <div style={styles.header}>
+  <div>
+    <h1 style={styles.title}>Vendor applications</h1>
+    <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
+  </div>
+  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+    <a href="/admin/passes" style={styles.navLink}>Passes</a>
+    <button onClick={onSignOut} style={styles.signOut}>Sign out</button>
+  </div>
+</div>
         <div>
           <h1 style={styles.title}>Vendor applications</h1>
           <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
@@ -222,6 +232,14 @@ const styles = {
     padding: "2rem 1rem",
     fontFamily: "Georgia, serif"
   },
+  navLink: {
+  fontSize: "13px",
+  color: "#2d5a27",
+  textDecoration: "none",
+  border: "1px solid #2d5a27",
+  borderRadius: "6px",
+  padding: "0.4rem 0.8rem"
+},
   header: {
     display: "flex",
     justifyContent: "space-between",
