@@ -89,6 +89,7 @@ function VendorQueue({ onSignOut }) {
   </div>
   <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
     <a href="/admin/passes" style={styles.navLink}>Passes</a>
+    <a href="/admin/sponsors" style={styles.navLink}>Sponsors</a>
     <button onClick={onSignOut} style={styles.signOut}>Sign out</button>
   </div>
 </div>

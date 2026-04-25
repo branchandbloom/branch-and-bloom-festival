@@ -12,6 +12,7 @@ import DoorSales from "./pages/volunteer/DoorSales";
 import GateApp from "./pages/volunteer/GateApp";
 import ComplimentaryPasses from "./pages/admin/ComplimentaryPasses";
 import ClaimPass from "./pages/attendee/ClaimPass";
+import SponsorAdmin from "./pages/admin/SponsorAdmin";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -58,6 +59,14 @@ function App() {
         <Route path="/door" element={<DoorSales />} />
         <Route path="/gate" element={<GateApp />} />
         <Route path="/pass" element={<ClaimPass />} />
+        <Route
+  path="/admin/sponsors"
+  element={
+    user
+      ? <SponsorAdmin onSignOut={handleSignOut} />
+      : <AdminLogin onLogin={() => {}} />
+  }
+/>
       </Routes>
     </BrowserRouter>
   );
