@@ -40,20 +40,23 @@ function ComplimentaryPasses({ onSignOut }) {
   }, []);
 
   async function loadPasses() {
-    setLoading(true);
-    try {
-      const q = query(
-        collection(db, "attendees"),
-        where("source", "in", ["complimentary", "volunteer", "vendor_comp", "sponsor_comp"]),
-        orderBy("createdAt", "desc")
-      );
-      const snapshot = await getDocs(q);
-      setPasses(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-    } catch (error) {
-      console.error('Load passes error:', error);
-    }
-    setLoading(false);
+  setLoading(true);
+  try {
+    const snapshot = await getDocs(collection(db, "attendees"));
+    const allPasses = snapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(d => ['volunteer', 'vendor_comp', 'sponsor_comp', 'complimentary', 'staff'].includes(d.source))
+      .sort((a, b) => {
+        const aTime = a.createdAt?.seconds || 0;
+        const bTime = b.createdAt?.seconds || 0;
+        return bTime - aTime;
+      });
+    setPasses(allPasses);
+  } catch (error) {
+    console.error('Load passes error:', error);
   }
+  setLoading(false);
+}
 
   async function generatePasses() {
     if (!recipientName && quantity === 1) return;
