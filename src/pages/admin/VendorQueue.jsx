@@ -203,6 +203,21 @@ function VendorQueue({ onSignOut }) {
       alert('Error: ' + error.message);
     }
   }
+  {vendor.status === "approved" && (
+  <button
+    onClick={() => {
+      const method = prompt('Payment method? (check / cash / transfer)');
+      if (method) updateDoc(doc(db, "vendors", vendor.id), {
+        status: 'paid',
+        paymentMethod: method,
+        paidAt: new Date().toISOString()
+      });
+    }}
+    style={styles.actionManual}
+  >
+    ✓ Mark paid manually
+  </button>
+)}
 
   const filtered = filter === "all"
     ? vendors
@@ -596,6 +611,15 @@ const styles = {
     fontSize: "13px",
     cursor: "pointer"
   },
+  actionManual: {
+  padding: "0.4rem 1rem",
+  borderRadius: "6px",
+  border: "1px solid #2d5a27",
+  background: "#fff",
+  color: "#2d5a27",
+  fontSize: "13px",
+  cursor: "pointer"
+},
   actionPayment: {
     padding: "0.4rem 1rem",
     borderRadius: "6px",
