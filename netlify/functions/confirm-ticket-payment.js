@@ -52,7 +52,6 @@ export const handler = async function(event, context) {
   try {
     const { sessionId } = JSON.parse(event.body);
 
-    // Retrieve session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== 'paid') {
@@ -71,7 +70,6 @@ export const handler = async function(event, context) {
       donation
     } = session.metadata;
 
-    // Generate unique QR token
     const qrToken = generateQRToken();
 
     const attendeeData = {
@@ -91,9 +89,8 @@ export const handler = async function(event, context) {
       createdAt: new Date().toISOString()
     };
 
-    // Save to Firestore
     const result = await saveAttendeeToFirestore(attendeeData);
-    console.log('Attendee saved:', result.status);
+    console.log('Attendee saved:', result.status, result.body);
 
     return {
       statusCode: 200,
