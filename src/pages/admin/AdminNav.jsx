@@ -18,7 +18,7 @@ function AdminNav({ onSignOut }) {
       </div>
       <div style={styles.links}>
         {links.map(link => (
-          
+         <a 
             key={link.path}
             href={link.path}
             style={{
