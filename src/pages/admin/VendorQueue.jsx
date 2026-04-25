@@ -621,15 +621,16 @@ const styles = {
     fontSize: "12px",
     color: "#1565c0",
     wordBreak: "break-all"
+  },
+  actionPasses: {
+    padding: "0.4rem 1rem",
+    borderRadius: "6px",
+    border: "1px solid #2d5a27",
+    background: "#f0f7ee",
+    color: "#2d5a27",
+    fontSize: "13px",
+    cursor: "pointer"
   }
 };
-actionPasses: {
-  padding: "0.4rem 1rem",
-  borderRadius: "6px",
-  border: "1px solid #2d5a27",
-  background: "#f0f7ee",
-  color: "#2d5a27",
-  fontSize: "13px",
-  cursor: "pointer"
-}
+
 export default VendorQueue;
