@@ -215,7 +215,37 @@ function VendorQueue({ onSignOut }) {
     held: vendors.filter(v => v.status === "held").length,
     paid: vendors.filter(v => v.status === "paid").length
   };
+async function generateVendorPasses(vendor) {
+  try {
+    for (let i = 0; i < 2; i++) {
+      const token = Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
+      const claimUrl = `https://branch-and-bloom-festival.netlify.app/pass?token=${token}`;
 
+      await addDoc(collection(db, "attendees"), {
+        name: `${vendor.businessName || vendor.contactName} — Vendor Pass ${i + 1}`,
+        nameLower: `${(vendor.businessName || vendor.contactName).toLowerCase()} vendor pass ${i + 1}`,
+        email: `vendor-${token.substring(0, 6)}@branchandbloom`,
+        ticketType: 'vendor',
+        ticketLabel: 'Vendor Pass',
+        groupSize: 1,
+        donation: 0,
+        total: 0,
+        qrToken: token,
+        checkedInDay1: false,
+        checkedInDay2: false,
+        status: 'confirmed',
+        source: 'vendor_comp',
+        vendorId: vendor.id,
+        claimUrl,
+        createdAt: serverTimestamp()
+      });
+    }
+    alert(`2 vendor passes generated for ${vendor.businessName || vendor.contactName}!\n\nFind them in the Passes section.`);
+  } catch (error) {
+    alert('Error generating passes: ' + error.message);
+  }
+}
   return (
     <div>
       <AdminNav onSignOut={onSignOut} />
@@ -360,13 +390,22 @@ function VendorQueue({ onSignOut }) {
               >
                 ⏸ Hold
               </button>
-              {vendor.status === "approved" && (
-                <button
-                  onClick={() => generatePaymentLink(vendor)}
-                  style={styles.actionPayment}
-                >
-                  $ Generate payment link
-                </button>
+            {vendor.status === "approved" && (
+  <button
+    onClick={() => generatePaymentLink(vendor)}
+    style={styles.actionPayment}
+  >
+    $ Generate payment link
+  </button>
+)}
+{vendor.status === "paid" && (
+  <button
+    onClick={() => generateVendorPasses(vendor)}
+    style={styles.actionPasses}
+  >
+    🎟 Generate vendor passes
+  </button>
+)}
               )}
             </div>
 
@@ -585,5 +624,13 @@ const styles = {
     wordBreak: "break-all"
   }
 };
-
+actionPasses: {
+  padding: "0.4rem 1rem",
+  borderRadius: "6px",
+  border: "1px solid #2d5a27",
+  background: "#f0f7ee",
+  color: "#2d5a27",
+  fontSize: "13px",
+  cursor: "pointer"
+}
 export default VendorQueue;
