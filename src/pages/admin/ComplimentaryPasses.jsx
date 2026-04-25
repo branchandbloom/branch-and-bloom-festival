@@ -1,3 +1,4 @@
+import AdminNav from "./AdminNav";
 import { useState, useEffect } from "react";
 import { db } from "../../firebase";
 import {
@@ -126,8 +127,9 @@ function ComplimentaryPasses({ onSignOut }) {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>
+  <div>
+    <AdminNav onSignOut={onSignOut} />
+    <div style={styles.container}>      <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Complimentary passes</h1>
           <p style={styles.subtitle}>Branch & Bloom Festival 2026</p>
@@ -270,6 +272,7 @@ function ComplimentaryPasses({ onSignOut }) {
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
