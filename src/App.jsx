@@ -37,6 +37,7 @@ function App() {
               : <AdminLogin onLogin={() => {}} />
           }
         />
+        <Route path="/tickets/success" element={<TicketSuccess />} />
         <Route path="/tickets" element={<TicketPurchase />} />
         <Route path="/" element={<Navigate to="/vendor/register" />} />
       </Routes>
