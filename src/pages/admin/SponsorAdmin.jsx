@@ -74,7 +74,7 @@ function SponsorAdmin({ onSignOut }) {
   const [phone, setPhone] = useState('');
   const [tier, setTier] = useState('seedling');
   const [notes, setNotes] = useState('');
-
+  const [expandedClaims, setExpandedClaims] = useState({});
   useEffect(() => {
     loadSponsors();
   }, []);
@@ -379,27 +379,38 @@ return (
               </div>
             </div>
 
-            {/* Claim tokens */}
-            {sponsor.claimTokens?.length > 0 && (
-              <div style={styles.claimSection}>
-                <p style={styles.claimTitle}>
-                  Pass claim links — {sponsor.claimTokens.length} passes
-                </p>
-                {sponsor.claimTokens.map((t, i) => (
-                  <div key={i} style={styles.claimRow}>
-                    <span style={styles.claimIndex}>#{i + 1}</span>
-                    <span style={styles.claimUrl}>{t.claimUrl}</span>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(t.claimUrl)}
-                      style={styles.copyButton}
-                    >
-                      Copy
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
+            {/* Claim tokens — collapsed by default */}
+{sponsor.claimTokens?.length > 0 && (
+  <div style={styles.claimSection}>
+    <div
+      onClick={() => setExpandedClaims(prev => ({ ...prev, [sponsor.id]: !prev[sponsor.id] }))}
+      style={styles.claimToggle}
+    >
+      <span style={styles.claimTitle}>
+        🎟 {sponsor.claimTokens.length} pass claim links
+      </span>
+      <span style={styles.claimChevron}>
+        {expandedClaims[sponsor.id] ? '▲ Hide' : '▼ Show'}
+      </span>
+    </div>
+    {expandedClaims[sponsor.id] && (
+      <div style={{ marginTop: '0.75rem' }}>
+        {sponsor.claimTokens.map((t, i) => (
+          <div key={i} style={styles.claimRow}>
+            <span style={styles.claimIndex}>#{i + 1}</span>
+            <span style={styles.claimUrl}>{t.claimUrl}</span>
+            <button
+              onClick={() => navigator.clipboard.writeText(t.claimUrl)}
+              style={styles.copyButton}
+            >
+              Copy
+            </button>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
             {/* Actions */}
             <div style={styles.actions}>
               {sponsor.status !== 'paid' && (
@@ -713,7 +724,17 @@ const styles = {
     color: "#888",
     marginTop: "0.75rem",
     fontStyle: "italic"
-  }
+  },
+  claimToggle: {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  cursor: "pointer"
+},
+claimChevron: {
+  fontSize: "12px",
+  color: "#2d5a27"
+}
 };
 
 export default SponsorAdmin;

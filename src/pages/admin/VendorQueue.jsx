@@ -180,12 +180,15 @@ function VendorQueue({ onSignOut }) {
     }
   }
 
+  // FIXED: now saves claim URLs back to the vendor record so they display on the card
   async function generateVendorPasses(vendor) {
     try {
+      const passes = [];
       for (let i = 0; i < 2; i++) {
         const token = Math.random().toString(36).substring(2, 15) +
           Math.random().toString(36).substring(2, 15);
         const claimUrl = `https://branch-and-bloom-festival.netlify.app/pass?token=${token}`;
+
         await addDoc(collection(db, "attendees"), {
           name: `${vendor.businessName || vendor.contactName} — Vendor Pass ${i + 1}`,
           nameLower: `${(vendor.businessName || vendor.contactName).toLowerCase()} vendor pass ${i + 1}`,
@@ -204,8 +207,16 @@ function VendorQueue({ onSignOut }) {
           claimUrl,
           createdAt: serverTimestamp()
         });
+
+        passes.push({ token, claimUrl });
       }
-      alert(`2 vendor passes generated for ${vendor.businessName || vendor.contactName}!\n\nFind them in the Passes section.`);
+
+      // Save claim URLs back to vendor record so they appear on the vendor card
+      await updateDoc(doc(db, "vendors", vendor.id), {
+        vendorPasses: passes,
+        passesGeneratedAt: new Date().toISOString()
+      });
+
     } catch (error) {
       alert('Error generating passes: ' + error.message);
     }
@@ -360,6 +371,7 @@ function VendorQueue({ onSignOut }) {
               )}
             </div>
 
+            {/* Payment link display */}
             {vendor.paymentLink && (
               <div style={styles.paymentLinkBox}>
                 <p style={styles.paymentLinkLabel}>
@@ -368,6 +380,26 @@ function VendorQueue({ onSignOut }) {
                 <a href={vendor.paymentLink} target="_blank" rel="noopener noreferrer" style={styles.paymentLinkUrl}>{vendor.paymentLink}</a>
               </div>
             )}
+
+            {/* Vendor passes display — NEW */}
+            {vendor.vendorPasses?.length > 0 && (
+              <div style={styles.passesBox}>
+                <p style={styles.passesLabel}>🎟 Vendor passes</p>
+                {vendor.vendorPasses.map((p, i) => (
+                  <div key={i} style={styles.claimRow}>
+                    <span style={styles.claimIndex}>#{i + 1}</span>
+                    <span style={styles.claimUrl}>{p.claimUrl}</span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(p.claimUrl)}
+                      style={styles.copyButton}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
           </div>
         ))}
       </div>
@@ -408,7 +440,13 @@ const styles = {
   actionPasses: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#f0f7ee", color: "#2d5a27", fontSize: "13px", cursor: "pointer" },
   paymentLinkBox: { marginTop: "1rem", padding: "0.75rem", background: "#e3f2fd", borderRadius: "6px", border: "1px solid #90caf9" },
   paymentLinkLabel: { fontSize: "13px", color: "#1565c0", marginBottom: "0.4rem" },
-  paymentLinkUrl: { fontSize: "12px", color: "#1565c0", wordBreak: "break-all" }
+  paymentLinkUrl: { fontSize: "12px", color: "#1565c0", wordBreak: "break-all" },
+  passesBox: { marginTop: "1rem", padding: "0.75rem", background: "#f0f7ee", borderRadius: "6px", border: "1px solid #a5d6a7" },
+  passesLabel: { fontSize: "13px", color: "#2d5a27", fontWeight: "600", marginBottom: "0.5rem" },
+  claimRow: { display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" },
+  claimIndex: { fontSize: "12px", color: "#888", minWidth: "24px" },
+  claimUrl: { fontSize: "11px", color: "#555", flex: 1, wordBreak: "break-all", fontFamily: "monospace" },
+  copyButton: { padding: "0.2rem 0.6rem", fontSize: "11px", background: "#2d5a27", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", whiteSpace: "nowrap" }
 };
 
 export default VendorQueue;
