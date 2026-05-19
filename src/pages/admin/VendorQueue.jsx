@@ -124,6 +124,7 @@ function VendorQueue({ onSignOut }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [sendingEmail, setSendingEmail] = useState({});
 
   useEffect(() => {
     const q = query(collection(db, "vendors"), orderBy("createdAt", "desc"));
@@ -180,7 +181,7 @@ function VendorQueue({ onSignOut }) {
     }
   }
 
-  // FIXED: now saves claim URLs back to the vendor record so they display on the card
+  // Saves claim URLs back to vendor record so they display on card
   async function generateVendorPasses(vendor) {
     try {
       const passes = [];
@@ -211,7 +212,6 @@ function VendorQueue({ onSignOut }) {
         passes.push({ token, claimUrl });
       }
 
-      // Save claim URLs back to vendor record so they appear on the vendor card
       await updateDoc(doc(db, "vendors", vendor.id), {
         vendorPasses: passes,
         passesGeneratedAt: new Date().toISOString()
@@ -220,6 +220,60 @@ function VendorQueue({ onSignOut }) {
     } catch (error) {
       alert('Error generating passes: ' + error.message);
     }
+  }
+
+  // Send approval email — approved, not yet paid
+  async function sendApprovalEmail(vendor) {
+    setSendingEmail(prev => ({ ...prev, [`approval_${vendor.id}`]: true }));
+    try {
+      const response = await fetch('/.netlify/functions/send-vendor-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'approval', vendor })
+      });
+      const data = await response.json();
+      if (data.success) {
+        await updateDoc(doc(db, "vendors", vendor.id), {
+          approvalEmailSent: true,
+          approvalEmailSentAt: new Date().toISOString()
+        });
+        alert(`Approval email sent to ${vendor.email} ✓`);
+      } else {
+        alert('Error sending email: ' + data.error);
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+    setSendingEmail(prev => ({ ...prev, [`approval_${vendor.id}`]: false }));
+  }
+
+  // Send acceptance email — paid, includes pass claim links
+  async function sendAcceptanceEmail(vendor) {
+    if (!vendor.vendorPasses?.length) {
+      alert('Please generate vendor passes first before sending the acceptance email.');
+      return;
+    }
+    setSendingEmail(prev => ({ ...prev, [`acceptance_${vendor.id}`]: true }));
+    try {
+      const response = await fetch('/.netlify/functions/send-vendor-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'acceptance', vendor, passes: vendor.vendorPasses })
+      });
+      const data = await response.json();
+      if (data.success) {
+        await updateDoc(doc(db, "vendors", vendor.id), {
+          acceptanceEmailSent: true,
+          acceptanceEmailSentAt: new Date().toISOString()
+        });
+        alert(`Acceptance email with passes sent to ${vendor.email} ✓`);
+      } else {
+        alert('Error sending email: ' + data.error);
+      }
+    } catch (error) {
+      alert('Error: ' + error.message);
+    }
+    setSendingEmail(prev => ({ ...prev, [`acceptance_${vendor.id}`]: false }));
   }
 
   const filtered = filter === "all"
@@ -296,13 +350,21 @@ function VendorQueue({ onSignOut }) {
                 <p style={styles.meta}>{vendor.email} · {vendor.phone}</p>
                 {vendor.address && <p style={styles.meta}>{vendor.address}</p>}
               </div>
-              <span style={{
-                ...styles.badge,
-                background: STATUS_COLORS[vendor.status]?.bg || "#eee",
-                color: STATUS_COLORS[vendor.status]?.color || "#333"
-              }}>
-                {STATUS_COLORS[vendor.status]?.label || vendor.status}
-              </span>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{
+                  ...styles.badge,
+                  background: STATUS_COLORS[vendor.status]?.bg || "#eee",
+                  color: STATUS_COLORS[vendor.status]?.color || "#333"
+                }}>
+                  {STATUS_COLORS[vendor.status]?.label || vendor.status}
+                </span>
+                {vendor.approvalEmailSent && (
+                  <p style={styles.emailSentNote}>✉ Approval sent</p>
+                )}
+                {vendor.acceptanceEmailSent && (
+                  <p style={styles.emailSentNote}>✉ Acceptance sent</p>
+                )}
+              </div>
             </div>
 
             <div style={styles.details}>
@@ -364,9 +426,29 @@ function VendorQueue({ onSignOut }) {
                   ✓ Mark paid manually
                 </button>
               )}
+              {/* Approval email button — shows for approved vendors */}
+              {vendor.status === "approved" && (
+                <button
+                  onClick={() => sendApprovalEmail(vendor)}
+                  style={vendor.approvalEmailSent ? styles.actionEmailSent : styles.actionEmail}
+                  disabled={sendingEmail[`approval_${vendor.id}`] || vendor.approvalEmailSent}
+                >
+                  {sendingEmail[`approval_${vendor.id}`] ? 'Sending...' : vendor.approvalEmailSent ? '✉ Approval sent' : '✉ Send approval email'}
+                </button>
+              )}
               {vendor.status === "paid" && (
                 <button onClick={() => generateVendorPasses(vendor)} style={styles.actionPasses}>
                   🎟 Generate vendor passes
+                </button>
+              )}
+              {/* Acceptance + passes email button — shows for paid vendors with passes */}
+              {vendor.status === "paid" && vendor.vendorPasses?.length > 0 && (
+                <button
+                  onClick={() => sendAcceptanceEmail(vendor)}
+                  style={vendor.acceptanceEmailSent ? styles.actionEmailSent : styles.actionEmail}
+                  disabled={sendingEmail[`acceptance_${vendor.id}`] || vendor.acceptanceEmailSent}
+                >
+                  {sendingEmail[`acceptance_${vendor.id}`] ? 'Sending...' : vendor.acceptanceEmailSent ? '✉ Acceptance sent' : '✉ Send acceptance + passes'}
                 </button>
               )}
             </div>
@@ -381,7 +463,7 @@ function VendorQueue({ onSignOut }) {
               </div>
             )}
 
-            {/* Vendor passes display — NEW */}
+            {/* Vendor passes display */}
             {vendor.vendorPasses?.length > 0 && (
               <div style={styles.passesBox}>
                 <p style={styles.passesLabel}>🎟 Vendor passes</p>
@@ -424,7 +506,8 @@ const styles = {
   businessName: { fontSize: "18px", color: "#2d5a27", marginBottom: "0.2rem" },
   contactPerson: { fontSize: "13px", color: "#666", marginBottom: "0.2rem" },
   meta: { fontSize: "13px", color: "#888" },
-  badge: { padding: "0.3rem 0.7rem", borderRadius: "12px", fontSize: "12px", fontWeight: "600" },
+  badge: { padding: "0.3rem 0.7rem", borderRadius: "12px", fontSize: "12px", fontWeight: "600", display: "inline-block" },
+  emailSentNote: { fontSize: "11px", color: "#2d5a27", marginTop: "4px", textAlign: "right" },
   details: { display: "flex", gap: "0.5rem", marginBottom: "0.75rem", flexWrap: "wrap" },
   pill: { background: "#f0ebe3", color: "#555", padding: "0.2rem 0.6rem", borderRadius: "10px", fontSize: "12px" },
   description: { fontSize: "14px", color: "#555", lineHeight: "1.6", marginBottom: "0.5rem" },
@@ -438,6 +521,8 @@ const styles = {
   actionPayment: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #1565c0", background: "#fff", color: "#1565c0", fontSize: "13px", cursor: "pointer" },
   actionManual: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#fff", color: "#2d5a27", fontSize: "13px", cursor: "pointer" },
   actionPasses: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #2d5a27", background: "#f0f7ee", color: "#2d5a27", fontSize: "13px", cursor: "pointer" },
+  actionEmail: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #6a3d9a", background: "#fff", color: "#6a3d9a", fontSize: "13px", cursor: "pointer" },
+  actionEmailSent: { padding: "0.4rem 1rem", borderRadius: "6px", border: "1px solid #ccc", background: "#f9f9f9", color: "#aaa", fontSize: "13px", cursor: "default" },
   paymentLinkBox: { marginTop: "1rem", padding: "0.75rem", background: "#e3f2fd", borderRadius: "6px", border: "1px solid #90caf9" },
   paymentLinkLabel: { fontSize: "13px", color: "#1565c0", marginBottom: "0.4rem" },
   paymentLinkUrl: { fontSize: "12px", color: "#1565c0", wordBreak: "break-all" },
