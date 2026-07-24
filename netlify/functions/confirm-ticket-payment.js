@@ -1,6 +1,5 @@
 import Stripe from 'stripe';
 import https from 'https';
-import QRCode from 'qrcode';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -30,8 +29,8 @@ async function saveAttendeeToFirestore(attendeeData) {
 
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: 'firestore.googleapis.com',
-      path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
+Hostname: 'firestore.googleapis.com',
+path: `/v1/projects/${projectId}/databases/(default)/documents/attendees?key=${apiKey}`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,6 +57,7 @@ export const handler = async function(event, context) {
 
   try {
     const { sessionId } = JSON.parse(event.body);
+
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== 'paid') {
@@ -67,18 +67,19 @@ export const handler = async function(event, context) {
       };
     }
 
-    const { ticketType, ticketLabel, groupSize, name, email, donation } = session.metadata;
-    const qrToken = generateQRToken();
+    const {
+      ticketType,
+      ticketLabel,
+      groupSize,
+      name,
+      email,
+      donation
+    } = session.metadata;
 
-   const qrDataURL = await QRCode.toDataURL(`https://branch-and-bloom-festival.netlify.app/checkin?token=${qrToken}`, {
-      width: 300,
-      margin: 2,
-      color: { dark: '#2d5a27', light: '#ffffff' }
-    });
+    const qrToken = generateQRToken();
 
     const attendeeData = {
       name,
-      nameLower: name.toLowerCase(),
       email,
       ticketType,
       ticketLabel,
@@ -95,13 +96,12 @@ export const handler = async function(event, context) {
     };
 
     const result = await saveAttendeeToFirestore(attendeeData);
-    console.log('Attendee saved:', result.status);
+    console.log('Attendee saved:', result.status, result.body);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        qrDataURL,
         attendee: {
           name,
           email,
