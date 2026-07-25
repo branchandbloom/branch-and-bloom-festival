@@ -193,16 +193,15 @@ export const handler = async function(event, context) {
     const result = await saveAttendeeToFirestore(attendeeData);
     console.log('Attendee saved:', result.status);
 
-    sendTicketConfirmationEmail({
+    const emailResult = await sendTicketConfirmationEmail({
       name,
       email,
       ticketLabel,
       groupSize: parseInt(groupSize) || 1,
       donation: parseFloat(donation) || 0,
       total: session.amount_total / 100
-    }, qrDataURL)
-      .then(r => console.log('Ticket email result:', r))
-      .catch(err => console.error('Ticket email error (non-fatal):', err));
+    }, qrDataURL);
+    console.log('Ticket email result:', emailResult);
 
     return {
       statusCode: 200,
