@@ -87,7 +87,7 @@ async function sendTicketConfirmationEmail(attendee, qrDataURL) {
         </div>
         <div style="text-align: center; margin: 32px 0;">
           <p style="font-size: 13px; color: #2d5a27; font-weight: bold; margin: 0 0 16px; letter-spacing: 1px; text-transform: uppercase;">Your Entry QR Code</p>
-          <img src="${qrDataURL}" alt="Your festival entry QR code" width="200" height="200" style="display: block; margin: 0 auto; border: 4px solid #f0f7ee; border-radius: 8px;" />
+          <img src="cid:qrcode" alt="Your festival entry QR code" width="200" height="200" style="display: block; margin: 0 auto; border: 4px solid #f0f7ee; border-radius: 8px;" />
           <p style="font-size: 12px; color: #888; margin: 12px 0 0; font-style: italic;">Screenshot or print this QR code and present it at the gate for entry.</p>
         </div>
         <div style="background: #fff8e1; border-radius: 8px; padding: 16px 20px; margin: 24px 0; border-left: 3px solid #f0c040;">
@@ -105,12 +105,21 @@ async function sendTicketConfirmationEmail(attendee, qrDataURL) {
     </div>
   `;
 
+  const base64QR = qrDataURL.replace(/^data:image\/png;base64,/, '');
   const emailData = JSON.stringify({
     from: 'Branch & Bloom Festival <festival@send.branchandbloomnh.com>',
     to: [attendee.email],
     reply_to: 'info@branchandbloomnh.com',
     subject: 'Your ticket is confirmed — Branch & Bloom Festival 2026 🌸',
-    html
+    html,
+    attachments: [
+      {
+        filename: 'festival-ticket-qr.png',
+        content: base64QR,
+        content_type: 'image/png',
+        content_id: 'qrcode'
+      }
+    ]
   });
 
   return new Promise((resolve) => {
