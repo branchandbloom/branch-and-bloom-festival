@@ -15,6 +15,7 @@ import ClaimPass from "./pages/attendee/ClaimPass";
 import SponsorAdmin from "./pages/admin/SponsorAdmin";
 import AttendeeList from "./pages/admin/AttendeeList";
 import PrintablePasses from "./pages/admin/PrintablePasses";
+import SalesReport from "./pages/admin/SalesReport";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -39,6 +40,7 @@ function App() {
       <Routes>
         <Route path="/admin/passes" element={user ? <ComplimentaryPasses onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
         <Route path="/admin/print-passes" element={user ? <PrintablePasses onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
+        <Route path="/admin/sales" element={user ? <SalesReport onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
         <Route path="/vendor/register" element={<VendorRegistration />} />
         <Route path="/admin" element={user ? <VendorQueue onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
         <Route path="/admin/attendees" element={user ? <AttendeeList onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />

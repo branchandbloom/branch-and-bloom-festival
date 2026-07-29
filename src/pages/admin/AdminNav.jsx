@@ -8,7 +8,8 @@ function AdminNav({ onSignOut }) {
     { path: "/admin/sponsors", label: "🌸 Sponsors" },
     { path: "/admin/passes", label: "🎟 Passes" },
     { path: "/admin/attendees", label: "👥 Attendees" },
-    { path: "/admin/print-passes", label: "🖨 Print Passes" }
+    { path: "/admin/print-passes", label: "🖨 Print Passes" },
+    { path: "/admin/sales", label: "📊 Sales" }
   ];
 
   return (
