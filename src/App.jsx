@@ -14,6 +14,7 @@ import ComplimentaryPasses from "./pages/admin/ComplimentaryPasses";
 import ClaimPass from "./pages/attendee/ClaimPass";
 import SponsorAdmin from "./pages/admin/SponsorAdmin";
 import AttendeeList from "./pages/admin/AttendeeList";
+import PrintablePasses from "./pages/admin/PrintablePasses";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -36,31 +37,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-  path="/admin/passes"
-  element={
-    user
-      ? <ComplimentaryPasses onSignOut={handleSignOut} />
-      : <AdminLogin onLogin={() => {}} />
-  }
-/>
+        <Route path="/admin/passes" element={user ? <ComplimentaryPasses onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
+        <Route path="/admin/print-passes" element={user ? <PrintablePasses onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
         <Route path="/vendor/register" element={<VendorRegistration />} />
-        <Route
-          path="/admin"
-          element={
-            user
-              ? <VendorQueue onSignOut={handleSignOut} />
-              : <AdminLogin onLogin={() => {}} />
-          }
-        />
-        <Route
-  path="/admin/attendees"
-  element={
-    user
-      ? <AttendeeList onSignOut={handleSignOut} />
-      : <AdminLogin onLogin={() => {}} />
-  }
-/>
+        <Route path="/admin" element={user ? <VendorQueue onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
+        <Route path="/admin/attendees" element={user ? <AttendeeList onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
         <Route path="/tickets/success" element={<TicketSuccess />} />
         <Route path="/tickets" element={<TicketPurchase />} />
         <Route path="/" element={<Navigate to="/vendor/register" />} />
@@ -68,14 +49,7 @@ function App() {
         <Route path="/door" element={<DoorSales />} />
         <Route path="/gate" element={<GateApp />} />
         <Route path="/pass" element={<ClaimPass />} />
-        <Route
-  path="/admin/sponsors"
-  element={
-    user
-      ? <SponsorAdmin onSignOut={handleSignOut} />
-      : <AdminLogin onLogin={() => {}} />
-  }
-/>
+        <Route path="/admin/sponsors" element={user ? <SponsorAdmin onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
       </Routes>
     </BrowserRouter>
   );
