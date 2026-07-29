@@ -13,10 +13,8 @@ import {
 import { Html5Qrcode } from "html5-qrcode";
 
 const TICKETS = [
-  { id: "weekend", label: "Weekend Pass", price: 28 },
-  { id: "general", label: "General Admission", price: 18 },
-  { id: "child", label: "Child (5-12)", price: 6 },
-  { id: "senior", label: "Senior (65+)", price: 10 },
+  { id: "adult", label: "Weekend Pass", price: 15 },
+  { id: "group", label: "Group / Family Pass (up to 5)", price: 25 },
   { id: "comp", label: "Complimentary", price: 0 }
 ];
 
