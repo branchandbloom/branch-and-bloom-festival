@@ -125,7 +125,7 @@ function PrintablePasses({ onSignOut }) {
                   <div style={styles.details}>
                     <p style={styles.detailLine}>📅 September 26 & 27, 2026</p>
                     <p style={styles.detailLine}>📍 Temple of Joy · Tuftonboro, NH</p>
-                    <p style={styles.detailLine}>🕘 Gates open 9:00 AM</p>
+                    <p style={styles.detailLine}>🕘 Gates open 10:00 AM</p>
                   </div>
                 </div>
                 <div style={styles.passFooter}>
