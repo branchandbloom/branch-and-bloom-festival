@@ -68,7 +68,8 @@ function ClaimPass() {
         <div style={styles.icon}>🌸</div>
         <h1 style={styles.title}>Your festival pass</h1>
         <p style={styles.theme}>Metamorphosis</p>
-        <p style={styles.subtitle}>September 26–27, 2026 · New Hampshire</p>
+        <p style={styles.subtitle}>September 26–27, 2026</p>
+        <p style={styles.subtitle}>65 Federal Corner Road · Center Tuftonboro, NH</p>
 
         <div style={styles.nameBox}>
           <p style={styles.name}>{pass.name}</p>

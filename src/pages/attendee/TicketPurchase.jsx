@@ -118,7 +118,8 @@ function TicketPurchase() {
         <div style={styles.heroImage}>🌸</div>
         <h1 style={styles.title}>Branch & Bloom Festival 2026</h1>
         <p style={styles.theme}>Metamorphosis</p>
-        <p style={styles.subtitle}>September 26–27, 2026 · New Hampshire</p>
+        <p style={styles.subtitle}>September 26–27, 2026</p>
+        <p style={styles.subtitle}>65 Federal Corner Road · Center Tuftonboro, NH</p>
 
         {step === 'select' && (
           <>

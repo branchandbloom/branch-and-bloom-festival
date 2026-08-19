@@ -97,6 +97,9 @@ function TicketSuccess() {
           <p style={styles.detailRow}>
             <strong>Event:</strong> September 26–27, 2026
           </p>
+          <p style={styles.detailRow}>
+            <strong>Location:</strong> 65 Federal Corner Road, Center Tuftonboro, NH
+          </p>
         </div>
 
         <p style={styles.subtext}>
