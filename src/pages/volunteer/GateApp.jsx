@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { db } from "../../firebase";
 import {
   collection,
-  query,
-  where,
   getDocs,
   doc,
   updateDoc,
-  addDoc,
+  setDoc,
+  onSnapshot,
   serverTimestamp
 } from "firebase/firestore";
 import { Html5Qrcode } from "html5-qrcode";
@@ -25,12 +24,11 @@ const checkinField = today.toDateString() === day1.toDateString()
   : 'checkedInDay2';
 
 // SCANNER MODE
-function ScanMode() {
+function ScanMode({ attendees, findByToken, search, checkIn }) {
   const [scanStatus, setScanStatus] = useState('idle');
   const [attendee, setAttendee] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
   const scannerRef = useRef(null);
   const html5QrRef = useRef(null);
 
@@ -56,9 +54,9 @@ function ScanMode() {
           try {
             const url = new URL(decodedText);
             const token = url.searchParams.get('token');
-            if (token) await lookupToken(token);
+            if (token) lookupToken(token);
           } catch {
-            await lookupToken(decodedText);
+            lookupToken(decodedText);
           }
         },
         () => {}
@@ -69,58 +67,28 @@ function ScanMode() {
     }
   }
 
-  async function lookupToken(token) {
+  // Looks up the token against the locally preloaded attendee list —
+  // no network round trip, so this works with zero signal.
+  function lookupToken(token) {
     setScanStatus('loading');
-    try {
-      const q = query(collection(db, "attendees"), where("qrToken", "==", token));
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) { setScanStatus('notfound'); return; }
-      const attendeeDoc = snapshot.docs[0];
-      const data = { id: attendeeDoc.id, ...attendeeDoc.data() };
-      setAttendee(data);
-      setScanStatus(data[checkinField] ? 'already' : 'ready');
-    } catch (error) {
-      console.error('Lookup error:', error);
-      setScanStatus('error');
-    }
+    const data = findByToken(token);
+    if (!data) { setScanStatus('notfound'); return; }
+    setAttendee(data);
+    setScanStatus(data[checkinField] ? 'already' : 'ready');
   }
 
-  async function handleCheckIn(target) {
+  function handleCheckIn(target) {
     const a = target || attendee;
     if (!a) return;
-    try {
-      await updateDoc(doc(db, "attendees", a.id), {
-        [checkinField]: true,
-        [`${checkinField}At`]: new Date().toISOString()
-      });
-      setAttendee({ ...a, [checkinField]: true });
-      setScanStatus('success');
-      setSearchResults([]);
-    } catch (error) {
-      console.error('Check-in error:', error);
-    }
+    checkIn(a);
+    setAttendee({ ...a, [checkinField]: true, [`${checkinField}At`]: new Date().toISOString() });
+    setScanStatus('success');
+    setSearchResults([]);
   }
 
-  async function handleSearch() {
+  function handleSearch() {
     if (!searchTerm.trim()) return;
-    setSearching(true);
-    setSearchResults([]);
-    try {
-      const term = searchTerm.trim();
-      const termLower = term.toLowerCase();
-      const emailQ = query(collection(db, "attendees"), where("email", "==", termLower));
-      const emailSnap = await getDocs(emailQ);
-      let results = emailSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (results.length === 0) {
-        const nameQ = query(collection(db, "attendees"), where("nameLower", ">=", termLower), where("nameLower", "<=", termLower + '\uf8ff'));
-        const nameSnap = await getDocs(nameQ);
-        results = nameSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      }
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Search error:', error);
-    }
-    setSearching(false);
+    setSearchResults(search(searchTerm.trim()));
   }
 
   function reset() {
@@ -149,6 +117,10 @@ function ScanMode() {
         <div style={{ ...styles.icon, color: config.color }}>{config.icon}</div>
         <h2 style={{ ...styles.title, color: config.color }}>{config.title}</h2>
 
+        {attendees.length === 0 && (
+          <p style={styles.warnBanner}>⚠️ Attendee list not loaded yet. Connect to WiFi and tap "Refresh list" above before scanning.</p>
+        )}
+
         {scanStatus === 'idle' && (
           <>
             <button onClick={startScanner} style={styles.button}>📷 Start camera scan</button>
@@ -174,10 +146,8 @@ function ScanMode() {
               onChange={e => setSearchTerm(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
-            <button onClick={handleSearch} style={styles.searchButton} disabled={searching}>
-              {searching ? 'Searching...' : 'Search'}
-            </button>
-            {searchResults.length === 0 && searchTerm && !searching && (
+            <button onClick={handleSearch} style={styles.searchButton}>Search</button>
+            {searchResults.length === 0 && searchTerm && (
               <p style={styles.noResults}>No attendees found</p>
             )}
             {searchResults.map(result => (
@@ -218,7 +188,7 @@ function ScanMode() {
 }
 
 // SELL MODE
-function SellMode() {
+function SellMode({ sell }) {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [groupSize, setGroupSize] = useState(2);
   const [name, setName] = useState('');
@@ -240,33 +210,20 @@ function SellMode() {
     setStatus('select');
   }
 
-  async function handleSell() {
+  function handleSell() {
     if (!selectedTicket || !name) return;
-    const qrToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    try {
-      const attendeeData = {
-        name,
-        nameLower: name.toLowerCase(),
-        email: email || 'walk-in@door',
-        ticketType: selectedTicket.id,
-        ticketLabel: selectedTicket.label,
-        groupSize: groupSize,
-        donation,
-        total,
-        paymentMethod,
-        qrToken,
-        checkedInDay1: checkinField === 'checkedInDay1',
-        checkedInDay2: checkinField === 'checkedInDay2',
-        status: 'confirmed',
-        source: 'door',
-        createdAt: serverTimestamp()
-      };
-      await addDoc(collection(db, "attendees"), attendeeData);
-      setLastAttendee({ ...attendeeData, qrToken });
-      setStatus('success');
-    } catch (error) {
-      console.error('Door sale error:', error);
-    }
+    const record = sell({
+      name,
+      email: email || 'walk-in@door',
+      ticketType: selectedTicket.id,
+      ticketLabel: selectedTicket.label,
+      groupSize,
+      donation,
+      total,
+      paymentMethod
+    });
+    setLastAttendee(record);
+    setStatus('success');
   }
 
   if (status === 'success' && lastAttendee) {
@@ -483,19 +440,190 @@ function ChangeMode() {
   );
 }
 
-// GATE APP — three tabs
+// STATUS BAR — connection state, attendee cache freshness, pending sync count
+function StatusBar({ isOnline, attendeeCount, preloadedAt, pendingCount, onRefresh, refreshing }) {
+  const preloadedLabel = preloadedAt
+    ? preloadedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : 'not loaded';
+
+  return (
+    <div style={{ ...styles.statusBar, background: isOnline ? '#eef5ec' : '#fff3e0' }}>
+      <div style={styles.statusLeft}>
+        <span style={{ ...styles.statusDot, background: isOnline ? '#2d5a27' : '#b8860b' }}></span>
+        <span style={styles.statusText}>
+          {isOnline ? 'Online' : 'Offline'}
+          {pendingCount > 0 && ` · ${pendingCount} pending sync`}
+        </span>
+      </div>
+      <div style={styles.statusRight}>
+        <span style={styles.statusText}>{attendeeCount} loaded · {preloadedLabel}</span>
+        <button onClick={onRefresh} disabled={refreshing || !isOnline} style={styles.refreshBtn}>
+          {refreshing ? '…' : '↻ Refresh list'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// GATE APP — three tabs, shared offline-first data layer
 function GateApp() {
   const [mode, setMode] = useState('scan');
+  const [attendees, setAttendees] = useState([]);
+  const [preloadedAt, setPreloadedAt] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pending, setPending] = useState({});
+  const pendingUnsubs = useRef({});
+
+  // Track connectivity via browser events. This is a proxy for "can reach
+  // Firestore," not a guarantee, but it's the right signal for the UI —
+  // the actual sync safety net is Firestore's own write queue.
+  useEffect(() => {
+    function goOnline() { setIsOnline(true); }
+    function goOffline() { setIsOnline(false); }
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  // Pull the full attendee list into local state. This both warms
+  // Firestore's persistent cache (so it's available offline) AND gives us
+  // an in-memory array/map to search and look up against directly, which
+  // is more reliable offline than re-running Firestore queries.
+  const loadAttendees = useCallback(async () => {
+    setLoading(true);
+    try {
+      const snapshot = await getDocs(collection(db, "attendees"));
+      const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setAttendees(list);
+      setPreloadedAt(new Date());
+    } catch (error) {
+      console.error('Attendee preload error:', error);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // One-time initial load on mount, deferred a tick so the effect body
+    // itself stays synchronous (loadAttendees sets state at its start).
+    if (navigator.onLine) {
+      const timer = setTimeout(loadAttendees, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [loadAttendees]);
+
+  // Clean up any in-flight pending-write listeners on unmount.
+  useEffect(() => {
+    const unsubs = pendingUnsubs.current;
+    return () => {
+      Object.values(unsubs).forEach(unsub => unsub());
+    };
+  }, []);
+
+  // Tracks a write until Firestore confirms it's reached the backend.
+  // Writes themselves are fire-and-forget (see below) since the SDK's
+  // promise for a write doesn't resolve while offline — awaiting it would
+  // hang the UI until connectivity returns.
+  function trackPending(docRef, label) {
+    const key = docRef.path;
+    setPending(prev => ({ ...prev, [key]: label }));
+    const unsub = onSnapshot(
+      docRef,
+      { includeMetadataChanges: true },
+      snap => {
+        if (!snap.metadata.hasPendingWrites) {
+          setPending(prev => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          });
+          unsub();
+          delete pendingUnsubs.current[key];
+        }
+      },
+      err => console.error('Pending write tracking error:', err)
+    );
+    pendingUnsubs.current[key] = unsub;
+  }
+
+  function updateLocalAttendee(id, updates) {
+    setAttendees(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+  }
+
+  function addLocalAttendee(record) {
+    setAttendees(prev => [...prev, record]);
+  }
+
+  function findByToken(token) {
+    return attendees.find(a => a.qrToken === token) || null;
+  }
+
+  function search(term) {
+    const t = term.toLowerCase();
+    return attendees.filter(a =>
+      (a.email && a.email.toLowerCase() === t) ||
+      (a.name && a.name.toLowerCase().includes(t))
+    );
+  }
+
+  // Fire-and-forget: writes immediately to Firestore's local cache
+  // (instant, works offline), queues for sync, and we track it via
+  // trackPending rather than awaiting the promise.
+  function checkIn(a) {
+    const ref = doc(db, "attendees", a.id);
+    const updates = {
+      [checkinField]: true,
+      [`${checkinField}At`]: new Date().toISOString()
+    };
+    updateDoc(ref, updates).catch(err => console.error('Check-in sync error:', err));
+    trackPending(ref, `Check-in: ${a.name}`);
+    updateLocalAttendee(a.id, updates);
+  }
+
+  function sell(fields) {
+    const qrToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Generate the doc ref client-side so we have the ID immediately,
+    // instead of using addDoc (whose promise also won't resolve offline).
+    const ref = doc(collection(db, "attendees"));
+    const attendeeData = {
+      ...fields,
+      nameLower: fields.name.toLowerCase(),
+      qrToken,
+      checkedInDay1: checkinField === 'checkedInDay1',
+      checkedInDay2: checkinField === 'checkedInDay2',
+      status: 'confirmed',
+      source: 'door',
+      createdAt: serverTimestamp()
+    };
+    setDoc(ref, attendeeData).catch(err => console.error('Door sale sync error:', err));
+    trackPending(ref, `Sale: ${fields.name}`);
+    const record = { id: ref.id, ...attendeeData };
+    addLocalAttendee(record);
+    return record;
+  }
+
+  const pendingCount = Object.keys(pending).length;
 
   return (
     <div style={styles.wrapper}>
+      <StatusBar
+        isOnline={isOnline}
+        attendeeCount={attendees.length}
+        preloadedAt={preloadedAt}
+        pendingCount={pendingCount}
+        onRefresh={loadAttendees}
+        refreshing={loading}
+      />
       <div style={styles.toggle}>
         <button onClick={() => setMode('scan')} style={mode === 'scan' ? styles.tabActive : styles.tab}>📷 Check in</button>
         <button onClick={() => setMode('sell')} style={mode === 'sell' ? styles.tabActive : styles.tab}>🎟 Sell</button>
         <button onClick={() => setMode('change')} style={mode === 'change' ? styles.tabActive : styles.tab}>💵 Change</button>
       </div>
-      {mode === 'scan' && <ScanMode />}
-      {mode === 'sell' && <SellMode />}
+      {mode === 'scan' && <ScanMode attendees={attendees} findByToken={findByToken} search={search} checkIn={checkIn} />}
+      {mode === 'sell' && <SellMode sell={sell} />}
       {mode === 'change' && <ChangeMode />}
     </div>
   );
@@ -503,6 +631,13 @@ function GateApp() {
 
 const styles = {
   wrapper: { fontFamily: "Georgia, serif" },
+  statusBar: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", padding: "0.5rem 0.75rem", fontSize: "12px", borderBottom: "1px solid rgba(0,0,0,0.06)" },
+  statusLeft: { display: "flex", alignItems: "center", gap: "0.4rem" },
+  statusRight: { display: "flex", alignItems: "center", gap: "0.5rem" },
+  statusDot: { width: "8px", height: "8px", borderRadius: "50%", display: "inline-block" },
+  statusText: { color: "#444", fontFamily: "Georgia, serif" },
+  refreshBtn: { padding: "0.3rem 0.6rem", fontSize: "12px", background: "#fff", color: "#2d5a27", border: "1px solid #2d5a27", borderRadius: "6px", cursor: "pointer", fontFamily: "Georgia, serif" },
+  warnBanner: { fontSize: "13px", color: "#b8860b", background: "#fff8e1", border: "1px solid #ffe082", borderRadius: "8px", padding: "0.6rem 0.75rem", marginBottom: "0.75rem", textAlign: "left" },
   toggle: { display: "flex", position: "sticky", top: 0, zIndex: 100, background: "#2d5a27", padding: "0.5rem" },
   tab: { flex: 1, padding: "0.75rem", fontSize: "15px", background: "transparent", color: "rgba(255,255,255,0.7)", border: "none", borderRadius: "8px", cursor: "pointer", fontFamily: "Georgia, serif" },
   tabActive: { flex: 1, padding: "0.75rem", fontSize: "15px", background: "rgba(255,255,255,0.2)", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer", fontFamily: "Georgia, serif", fontWeight: "600" },
