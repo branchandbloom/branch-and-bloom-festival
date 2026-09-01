@@ -81,7 +81,8 @@ function ScanMode({ attendees, findByToken, search, checkIn }) {
     const a = target || attendee;
     if (!a) return;
     checkIn(a);
-    setAttendee({ ...a, [checkinField]: true, [`${checkinField}At`]: new Date().toISOString() });
+    setAttendee({ ...a, [checkinField]: true,
+        groupSize: a.groupSize, [`${checkinField}At`]: new Date().toISOString() });
     setScanStatus('success');
     setSearchResults([]);
   }
@@ -167,7 +168,14 @@ function ScanMode({ attendees, findByToken, search, checkIn }) {
           <div style={styles.detailBox}>
             <p style={styles.name}>{attendee.name}</p>
             <p style={styles.detail}>{attendee.ticketLabel}</p>
-            {attendee.groupSize > 1 && <p style={styles.detail}>Group of {attendee.groupSize}</p>}
+            {attendee.groupSize > 1 && (
+              <div style={{display:'flex',alignItems:'center',gap:'0.75rem',margin:'0.4rem 0'}}>
+                <span style={styles.detail}>Attending today:</span>
+                <button onClick={() => setAttendee({...attendee, groupSize: Math.max(1, attendee.groupSize - 1)})} style={styles.adjBtn}>−</button>
+                <span style={{fontWeight:'600',fontSize:'16px',color:'#2d5a27'}}>{attendee.groupSize}</span>
+                <button onClick={() => setAttendee({...attendee, groupSize: Math.min(5, attendee.groupSize + 1)})} style={styles.adjBtn}>+</button>
+              </div>
+            )}
             <p style={styles.detail}>Day 1: {attendee.checkedInDay1 ? '✓ Checked in' : 'Not yet'} · Day 2: {attendee.checkedInDay2 ? '✓ Checked in' : 'Not yet'}</p>
           </div>
         )}
@@ -663,6 +671,20 @@ const styles = {
   detailBox: { background: "#f9f6f0", borderRadius: "8px", padding: "1rem", marginBottom: "1rem", textAlign: "left" },
   name: { fontSize: "18px", fontWeight: "600", color: "#2d5a27", marginBottom: "0.4rem" },
   detail: { fontSize: "13px", color: "#555", marginBottom: "0.25rem" },
+  adjBtn: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    border: '2px solid #2d5a27',
+    background: '#fff',
+    color: '#2d5a27',
+    fontSize: '16px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: 'Georgia, serif'
+  },
   festival: { fontSize: "11px", color: "#ccc", marginTop: "1rem" },
   qrSection: { textAlign: "center", padding: "1rem", background: "#f0f7ee", borderRadius: "12px", marginBottom: "1rem", border: "2px solid #2d5a27" },
   qrTitle: { fontSize: "15px", fontWeight: "600", color: "#2d5a27", marginBottom: "0.4rem" },
