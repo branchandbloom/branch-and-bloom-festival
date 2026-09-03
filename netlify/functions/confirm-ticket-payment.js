@@ -172,6 +172,54 @@ export const handler = async function(event, context) {
       };
     }
 
+    // Check for duplicate using Firestore REST query
+    const projectId2 = process.env.VITE_FIREBASE_PROJECT_ID;
+    const apiKey2 = process.env.VITE_FIREBASE_API_KEY;
+    const queryBody = JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: 'attendees' }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'stripeSessionId' },
+            op: 'EQUAL',
+            value: { stringValue: sessionId }
+          }
+        },
+        limit: 1
+      }
+    });
+
+    const dupCheck = await new Promise((resolve, reject) => {
+      const opts = {
+        hostname: 'firestore.googleapis.com',
+        path: '/v1/projects/' + projectId2 + '/databases/(default)/documents:runQuery?key=' + apiKey2,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(queryBody) }
+      };
+      const req = https.request(opts, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve(JSON.parse(data)));
+      });
+      req.on('error', () => resolve([]));
+      req.write(queryBody);
+      req.end();
+    });
+
+    const alreadyExists = Array.isArray(dupCheck) && dupCheck.some(r => r.document);
+    if (alreadyExists) {
+      console.log('Duplicate session detected:', sessionId);
+      const { ticketType, ticketLabel, groupSize, name, email, donation } = session.metadata;
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          duplicate: true,
+          attendee: { name, email, ticketLabel, groupSize: parseInt(groupSize) || 1, donation: parseFloat(donation) || 0 }
+        })
+      };
+    }
+
     const { ticketType, ticketLabel, groupSize, name, email, donation } = session.metadata;
     const qrToken = generateQRToken();
 
