@@ -36,6 +36,13 @@ function AttendeeList({ onSignOut }) {
   const checkedInDay1 = attendees.filter(a => a.checkedInDay1).reduce((sum, a) => sum + (a.groupSize || 1), 0);
   const checkedInDay2 = attendees.filter(a => a.checkedInDay2).reduce((sum, a) => sum + (a.groupSize || 1), 0);
   const totalDonations = attendees.reduce((sum, a) => sum + (a.donation || 0), 0);
+  const individualCount = attendees.filter(a => a.ticketType === 'adult').length;
+  const groupTickets = attendees.filter(a => a.ticketType === 'group').length;
+  const groupCount = attendees.filter(a => a.ticketType === 'group').reduce((sum, a) => sum + (a.groupSize || 1), 0);
+  const vendorPassCount = attendees.filter(a => a.source === 'vendor_comp').length;
+  const sponsorPassCount = attendees.filter(a => a.source === 'sponsor_comp').length;
+  const volunteerPassCount = attendees.filter(a => ['volunteer','complimentary','staff'].includes(a.source)).length;
+  const doorCount = attendees.filter(a => a.source === 'door').reduce((sum, a) => sum + (a.groupSize || 1), 0);
 
   const filtered = attendees
     .filter(a => filter === 'all' || a.source === filter)
@@ -81,6 +88,38 @@ function AttendeeList({ onSignOut }) {
           <div style={styles.stat}>
             <p style={styles.statNumber}>${totalDonations}</p>
             <p style={styles.statLabel}>Kingswood donations</p>
+          </div>
+        </div>
+
+        <div style={styles.breakdownCard}>
+          <h3 style={styles.breakdownTitle}>Attendance breakdown</h3>
+          <div style={styles.breakdownRow}>
+            <span style={styles.breakdownLabel}>Individual weekend passes</span>
+            <span style={styles.breakdownValue}>{individualCount}</span>
+          </div>
+          <div style={styles.breakdownRow}>
+            <span style={styles.breakdownLabel}>Group/family passes ({groupTickets} tickets)</span>
+            <span style={styles.breakdownValue}>{groupCount} people</span>
+          </div>
+          <div style={styles.breakdownRow}>
+            <span style={styles.breakdownLabel}>Vendor passes</span>
+            <span style={styles.breakdownValue}>{vendorPassCount}</span>
+          </div>
+          <div style={styles.breakdownRow}>
+            <span style={styles.breakdownLabel}>Sponsor passes</span>
+            <span style={styles.breakdownValue}>{sponsorPassCount}</span>
+          </div>
+          <div style={styles.breakdownRow}>
+            <span style={styles.breakdownLabel}>Volunteer / staff passes</span>
+            <span style={styles.breakdownValue}>{volunteerPassCount}</span>
+          </div>
+          <div style={styles.breakdownRow}>
+            <span style={styles.breakdownLabel}>Door sales</span>
+            <span style={styles.breakdownValue}>{doorCount}</span>
+          </div>
+          <div style={{...styles.breakdownRow, borderTop: '1px solid #e0d9d0', paddingTop: '0.5rem', marginTop: '0.5rem'}}>
+            <span style={{...styles.breakdownLabel, fontWeight: '600', color: '#2d5a27'}}>Total estimated attendees</span>
+            <span style={{...styles.breakdownValue, fontWeight: '600', color: '#2d5a27'}}>{totalAttendees}</span>
           </div>
         </div>
 
@@ -290,6 +329,33 @@ const styles = {
     fontSize: "12px",
     padding: "0.2rem 0.6rem",
     borderRadius: "10px"
+  },
+  breakdownCard: {
+    background: '#fff',
+    borderRadius: '10px',
+    padding: '1rem 1.5rem',
+    marginBottom: '1.5rem',
+    boxShadow: '0 1px 6px rgba(0,0,0,0.07)'
+  },
+  breakdownTitle: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#2d5a27',
+    marginBottom: '0.75rem'
+  },
+  breakdownRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.3rem 0',
+    fontSize: '13px'
+  },
+  breakdownLabel: {
+    color: '#555'
+  },
+  breakdownValue: {
+    color: '#333',
+    fontWeight: '500'
   },
   donationPill: {
     fontSize: "12px",
