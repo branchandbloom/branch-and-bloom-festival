@@ -82,7 +82,7 @@ async function sendTicketConfirmationEmail(attendee, qrDataURL) {
           <p style="font-size: 13px; color: #2d5a27; font-weight: bold; margin: 0 0 12px; letter-spacing: 1px; text-transform: uppercase;">Festival Details</p>
           <p style="font-size: 14px; color: #444; margin: 0 0 6px;">📅 <strong>Dates:</strong> Saturday & Sunday, September 26–27, 2026</p>
           <p style="font-size: 14px; color: #444; margin: 0 0 6px;">📍 <strong>Location:</strong> Temple of Joy, 65 Federal Corner Road, Tuftonboro, NH</p>
-          <p style="font-size: 14px; color: #444; margin: 0 0 6px;">🕘 <strong>Gates open:</strong> 9:00 AM both days</p>
+          <p style="font-size: 14px; color: #444; margin: 0 0 6px;">🕘 <strong>Gates open:</strong> 10:00 AM both days</p>
           <p style="font-size: 14px; color: #444; margin: 0;">🅿️ <strong>Parking:</strong> Back of property</p>
         </div>
         <div style="text-align: center; margin: 32px 0;">
