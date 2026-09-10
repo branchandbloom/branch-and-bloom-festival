@@ -14,6 +14,7 @@ import ComplimentaryPasses from "./pages/admin/ComplimentaryPasses";
 import ClaimPass from "./pages/attendee/ClaimPass";
 import SponsorAdmin from "./pages/admin/SponsorAdmin";
 import AttendeeList from "./pages/admin/AttendeeList";
+import BroadcastEmail from "./pages/admin/BroadcastEmail";
 import PrintablePasses from "./pages/admin/PrintablePasses";
 import SalesReport from "./pages/admin/SalesReport";
 
@@ -52,6 +53,7 @@ function App() {
         <Route path="/gate" element={<GateApp />} />
         <Route path="/pass" element={<ClaimPass />} />
         <Route path="/admin/sponsors" element={user ? <SponsorAdmin onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
+      <Route path="/admin/broadcast" element={user ? <BroadcastEmail onSignOut={handleSignOut} /> : <AdminLogin onLogin={() => {}} />} />
       </Routes>
     </BrowserRouter>
   );
